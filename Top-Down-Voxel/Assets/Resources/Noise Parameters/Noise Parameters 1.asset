@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2fc0db83df118c24e89909d75f585e9f, type: 3}
   m_Name: Noise Parameters 1
   m_EditorClassIdentifier: 
-  globalScale: 0.05
+  globalScale: 0.01
   noise:
   - noiseScale: 5000
     octaves: 2

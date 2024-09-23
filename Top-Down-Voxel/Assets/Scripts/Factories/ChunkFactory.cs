@@ -13,7 +13,6 @@ public class ChunkFactory : MonoBehaviour
     [Header("Buffers")]
     public List<Chunk> chunksToProccess = new List<Chunk>();
 
-    //public Queue<JobChunkGenerator> jobsFinished = new Queue<JobChunkGenerator>();
     public List<JobChunkGenerator> jobs = new List<JobChunkGenerator>();
     [Header("Materials")]
     public List<Material> materials = new List<Material>();
@@ -101,17 +100,19 @@ public class ChunkFactory : MonoBehaviour
         if (time >= PlayerSettings.TimeToLoadNextChunks)
         {
             //sort chunks to generate the closest first
-            chunksToProccess = (from chunk in chunksToProccess orderby WorldSettings.ChunkRangeMagnitude(ChunksManager.Instance.Center, chunk.Position) ascending select chunk).ToList();
+            chunksToProccess = (from chunk
+                                in chunksToProccess
+                                where WorldSettings.ChunksInRange(ChunksManager.Instance.Center, chunk.Position, PlayerSettings.LoadDistance)
+                                orderby WorldSettings.ChunkRangeMagnitude(ChunksManager.Instance.Center, chunk.Position) ascending
+                                select chunk).ToList();
+
             for (int i = 0; i < chunksToProccess.Count && JobChunkGenerator.Processed < PlayerSettings.ChunksProcessed; i++)
             {
-                if (chunksToProccess[i] != null && WorldSettings.ChunksInRange(ChunksManager.Instance.Center, chunksToProccess[i].Position, PlayerSettings.LoadDistance))
+                if (chunksToProccess[i] != null)
                 {
-                    if (JobChunkGenerator.Processed < PlayerSettings.ChunksProcessed)
-                    {
-                        jobs.Add(new JobChunkGenerator(chunksToProccess[i].Position, noiseParameters.noise.ToArray(), octaveOffsets.ToArray(), noiseParameters.globalScale));
-                        chunksToProccess.RemoveAt(i);
-                        i--;
-                    }
+                    jobs.Add(new JobChunkGenerator(chunksToProccess[i].Position, noiseParameters.noise.ToArray(), octaveOffsets.ToArray(), noiseParameters.globalScale));
+                    chunksToProccess.RemoveAt(i);
+                    i--;
                 }
             }
             time = 0f;
@@ -129,10 +130,17 @@ public class ChunkFactory : MonoBehaviour
         {
             jobs[i].Dispose(disposeData : true);
             jobs[i] = null;
+            jobs.RemoveAt(i);
+            i--;
         }
     }
 
     public void OnApplicationQuit()
+    {
+        Dispose();
+    }
+
+    public void OnDestroy()
     {
         Dispose();
     }

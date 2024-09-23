@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Text;
 using UnityEngine.Profiling;
-using UnityEngine.UI;
 using TMPro;
 
 
@@ -12,7 +11,7 @@ using UnityEditor;
 using UnityEngine.Profiling;
 #endif
 
-public class StatsManager : MonoBehaviour
+public class StatsManager_GUI : MonoBehaviour
 {
     [Header("Stats Display")]
     private StringBuilder tx;
@@ -25,17 +24,10 @@ public class StatsManager : MonoBehaviour
     private float framesavtick = 0;
     private float framesav = 0.0f;
 
-    [Header("FPS settings")]
-    public int maxFps = 30;
-    public Slider slider;
-    public TMP_Text sliderText;
 
     // Use this for initialization
     void Awake()
     {
-        Application.targetFrameRate = maxFps;
-        sliderText.text = "FPS CAP: " + maxFps;
-        slider.value = maxFps;
         lastInterval = Time.realtimeSinceStartup;
         frames = 0;
         framesav = 0;
@@ -43,14 +35,6 @@ public class StatsManager : MonoBehaviour
         tx.Capacity = 200;
         Screen.sleepTimeout = SleepTimeout.NeverSleep;
     }
-/*
-    void Start()
-    {
-        Application.targetFrameRate = maxFps;
-        sliderText.text = "FPS CAP: " + maxFps;
-        slider.value = maxFps;
-    }
-*/
 
     // Update is called once per frame
     void Update()
@@ -96,14 +80,6 @@ public class StatsManager : MonoBehaviour
             frames = 0;
             lastInterval = timeNow;
         }
-
-        if (slider.value != maxFps)
-        {
-            maxFps = (int)slider.value;
-            Application.targetFrameRate = maxFps;
-            sliderText.text = "FPS CAP: " + maxFps;
-        }
-
     }
 }
 

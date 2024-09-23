@@ -2,15 +2,18 @@ using System;
 using UnityEditor;
 using UnityEngine;
 
-public class MenuManager : MonoBehaviour
+public class MenuManager_GUI : MonoBehaviour
 {
 
     [Header("Screen")]
     public KeyCode screenWindowKeyCode = KeyCode.F11;
     [Header("Stats")]
     public KeyCode statsKeyCode = KeyCode.F3;
-    public GameObject Pannel;
+    public GameObject StatsPannel;
 
+    [Header("Menu")]
+    public KeyCode MenyKeyCode = KeyCode.Escape;
+    public GameObject MenuPannel;
     public void Start()
     {
         Cursor.visible = false;
@@ -19,8 +22,13 @@ public class MenuManager : MonoBehaviour
     {
         if (Input.GetKeyDown(statsKeyCode))
         {
-            Pannel.SetActive(!Pannel.activeSelf);
-            Cursor.visible = Pannel.activeSelf;
+            StatsPannel.SetActive(!StatsPannel.activeSelf);
+            //Cursor.visible = StatsPannel.activeSelf;
+        }
+
+        if (Input.GetKeyDown(MenyKeyCode))
+        {
+            MenuPannel.SetActive(!MenuPannel.activeSelf);
         }
         if (Input.GetKeyDown(screenWindowKeyCode))
         {

@@ -223,4 +223,9 @@ public class ChunksManager : MonoBehaviour
     {
         Dispose();
     }
+
+    public void OnDestroy()
+    {
+        Dispose();
+    }
 }
