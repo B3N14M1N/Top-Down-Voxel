@@ -17,14 +17,14 @@ public class MenuManager_GUI : MonoBehaviour
     public GameObject MenuPannel;
     public void Start()
     {
-        Cursor.visible = false;
+        //Cursor.visible = false;
+        Cursor.visible = true;
     }
     public void Update()
     {
         if (Input.GetKeyDown(statsKeyCode))
         {
             StatsPannel.SetActive(!StatsPannel.activeSelf);
-            //Cursor.visible = StatsPannel.activeSelf;
         }
 
         if (Input.GetKeyDown(MenyKeyCode))

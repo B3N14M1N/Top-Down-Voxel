@@ -78,8 +78,9 @@ public class StatsManager_GUI : MonoBehaviour
 #if UNITY_EDITOR
             leftText.AppendFormat("\n\nDrawCalls : {0}\nUsed Texture Memory : {1}\nrenderedTextureCount : {2}", UnityStats.drawCalls, UnityStats.usedTextureMemorySize / 1048576, UnityStats.usedTextureCount);
 #endif
-            rightText.AppendFormat("GPU memory : {3}\nSys Memory : {4}\n" + "TotalAllocatedMemory : {0}mb\nTotalReservedMemory : {1}mb\nTotalUnusedReservedMemory : {2}mb",
-                SystemInfo.graphicsMemorySize, SystemInfo.systemMemorySize,
+            rightText.AppendFormat("GPU memory : {0}\nSys Memory : {1}\n" + "TotalAllocatedMemory : {2}mb\nTotalReservedMemory : {3}mb\nTotalUnusedReservedMemory : {4}mb",
+                SystemInfo.graphicsMemorySize,
+                SystemInfo.systemMemorySize,
                 Profiler.GetTotalAllocatedMemoryLong() / 1048576,
                 Profiler.GetTotalReservedMemoryLong() / 1048576,
                 Profiler.GetTotalUnusedReservedMemoryLong() / 1048576)

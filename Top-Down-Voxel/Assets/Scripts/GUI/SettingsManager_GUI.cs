@@ -25,6 +25,7 @@ public class SettingsManager_GUI : MonoBehaviour
 
     public void Awake()
     {
+        QualitySettings.vSyncCount = 0;
         Application.targetFrameRate = maxFps;
         if_MaxFps.text = maxFps.ToString();
         s_slider.value = maxFps;
@@ -37,7 +38,12 @@ public class SettingsManager_GUI : MonoBehaviour
     {
         Load();
     }
-
+    public void Start()
+    {
+        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = maxFps;
+        Load();
+    }
     public void Load()
     {
         s_slider.value = maxFps;

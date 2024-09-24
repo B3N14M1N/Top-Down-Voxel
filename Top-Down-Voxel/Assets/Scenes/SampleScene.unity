@@ -1862,7 +1862,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.25}
   m_AnchorMax: {x: 1, y: 0.75}
-  m_AnchoredPosition: {x: -5.000046, y: 0}
+  m_AnchoredPosition: {x: -5.000061, y: 0}
   m_SizeDelta: {x: -20, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &429535823
@@ -2613,6 +2613,7 @@ MonoBehaviour:
   - {fileID: 15303, guid: 0000000000000000f000000000000000, type: 0}
   materialIndex: 0
   canChangeMaterial: 1
+  MaterialChangeKey: 109
 --- !u!114 &669034329
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6592,7 +6593,7 @@ MonoBehaviour:
   cameraTransform: {fileID: 330585546}
   cameraYsmoothFollowHeigth: {x: -1, y: 2}
   cameraYfollowSensitivity: 1
-  fastSpeedMultiplier: 1.5
+  fastSpeedMultiplier: 2.5
   slowSpeedMultiplier: 0.5
   multiplierGain: 1
   JumpPower: 10
@@ -6622,10 +6623,10 @@ CharacterController:
   m_Height: 2
   m_Radius: 0.25
   m_SlopeLimit: 45
-  m_StepOffset: 1
+  m_StepOffset: 0.2
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
-  m_Center: {x: 0, y: 1, z: 0}
+  m_Center: {x: 0, y: 1.08, z: 0}
 --- !u!4 &1369952522
 Transform:
   m_ObjectHideFlags: 0
@@ -6635,7 +6636,7 @@ Transform:
   m_GameObject: {fileID: 1369952519}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 128, z: 0}
+  m_LocalPosition: {x: 0, y: 255, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
