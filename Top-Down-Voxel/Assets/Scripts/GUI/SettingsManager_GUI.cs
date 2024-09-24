@@ -73,7 +73,11 @@ public class SettingsManager_GUI : MonoBehaviour
         PlayerSettings.TimeToLoadNextChunks = valueFloat >= 0 ? valueFloat : PlayerSettings.TimeToLoadNextChunks;
 
         valueInt = Convert.ToInt32(if_Seed.text);
-        WorldSettings.Seed = valueInt;
+        if (valueInt != WorldSettings.Seed)
+        {
+            WorldSettings.Seed = valueInt;
+            ChunkFactory.Instance.InitSeed();
+        }
         valueInt = Convert.ToInt32(if_ChunkWidth.text);
         WorldSettings.ChunkWidth = valueInt > 0 ? valueInt : WorldSettings.ChunkWidth;
         valueInt = Convert.ToInt32(if_ChunkHeight.text);

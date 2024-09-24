@@ -46,12 +46,15 @@ public class Tab_GUI : MonoBehaviour
     public void Awake()
     {
         Button = GetComponent<Button>();
-        Button.onClick.RemoveAllListeners();
-        Button.onClick.AddListener(delegate { Selected(); });
+        if (Button != null)
+        {
+            Button.onClick.RemoveAllListeners();
+            Button.onClick.AddListener(delegate { Selected(); });
+        }
     }
 
     public void Selected()
     {
-        transform.GetComponentInParent<TabManager_GUI>().OnTabChange(this);
+        transform.GetComponentInParent<TabManager_GUI>()?.OnTabChange(this);
     }
 }
