@@ -1,34 +1,45 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
+[Serializable]
 public class TabManager_GUI : MonoBehaviour
 {
-    public List<Tab_GUI> tabs;
+    public Color SelectedColor;
+    public Color UnselectedColor;
+    private List<Tab_GUI> Tabs;
+
+
     public delegate void TabChanged();
     public event TabChanged OnTabChanged;
 
-    public void Start()
+    public void Awake()
     {
-        for (int i = 0; i < tabs.Count; i++)
-        {
-            tabs[i].Unselected();
-            if (i == 0)
-                tabs[i].Selected();
-        }
-
         OnTabChanged += CloseTabs;
+        Tabs = GetComponentsInChildren<Tab_GUI>().ToList();
+    }
+
+    public void OnEnable()
+    {
+        if (Tabs.Count > 0)
+            OnTabChange(Tabs[0]);
     }
 
     private void CloseTabs()
     {
-        foreach (var tab in tabs)
+        foreach (var tab in Tabs)
         {
-            tab.Unselected();
+            tab.Active = false;
+            tab.TabColor = UnselectedColor;
         }
     }
 
-    public void OnTabChange()
+    public void OnTabChange(Tab_GUI tab)
     {
         OnTabChanged?.Invoke();
+
+        tab.Active = true;
+        tab.TabColor = SelectedColor;
     }
 }

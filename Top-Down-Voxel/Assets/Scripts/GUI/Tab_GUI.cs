@@ -1,13 +1,47 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
+[Serializable]
 [RequireComponent(typeof(Button))]
 public class Tab_GUI : MonoBehaviour
 {
-    public Color SelectedColor;
-    public Color UnselectedColor;
-    private Button Button;
+    public Button Button {  get; private set; }
     public GameObject TabContent;
+
+    public Color TabColor 
+    {
+        get
+        {
+            if (Button != null)
+            {
+                return Button.image.color;
+            }
+            return Color.white;
+        }
+        set
+        {
+            if (Button != null) 
+            {
+                Button.image.color = value;
+            }
+        }
+    }
+
+    public bool Active
+    {
+        get
+        {
+            if (TabContent == null)
+                return false;
+            return TabContent.activeSelf;
+        }
+        set
+        {
+            if (TabContent != null)
+                TabContent.SetActive(value);
+        }
+    }
 
     public void Awake()
     {
@@ -18,19 +52,6 @@ public class Tab_GUI : MonoBehaviour
 
     public void Selected()
     {
-        //Debug.Log("Selected tab: " + gameObject.name);
-        transform.GetComponentInParent<TabManager_GUI>().OnTabChange();
-
-        TabContent.SetActive(true);
-
-        if (Button != null)
-            Button.GetComponent<Image>().color = SelectedColor;
-    }
-
-    public void Unselected()
-    {
-        TabContent.SetActive(false);
-        if(Button != null)
-            Button.GetComponent<Image>().color = UnselectedColor;
+        transform.GetComponentInParent<TabManager_GUI>().OnTabChange(this);
     }
 }

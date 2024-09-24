@@ -1,6 +1,5 @@
 using Unity.Collections;
 using UnityEngine;
-using static UnityEngine.Rendering.DebugUI;
 
 public class Chunk
 {

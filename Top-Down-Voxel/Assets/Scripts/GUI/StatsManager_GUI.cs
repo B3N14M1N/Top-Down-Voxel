@@ -2,6 +2,8 @@ using UnityEngine;
 using System.Text;
 using UnityEngine.Profiling;
 using TMPro;
+using System;
+
 
 
 #if UNITY_EDITOR
@@ -11,11 +13,14 @@ using UnityEditor;
 using UnityEngine.Profiling;
 #endif
 
+[Serializable]
 public class StatsManager_GUI : MonoBehaviour
 {
     [Header("Stats Display")]
-    private StringBuilder tx;
-    public TMP_Text text;
+    private StringBuilder leftText;
+    private StringBuilder rightText;
+    public TMP_Text leftSide;
+    public TMP_Text rightSide;
 
     private float updateInterval = 1.0f;
     private float lastInterval; // Last interval end time
@@ -31,8 +36,10 @@ public class StatsManager_GUI : MonoBehaviour
         lastInterval = Time.realtimeSinceStartup;
         frames = 0;
         framesav = 0;
-        tx = new StringBuilder();
-        tx.Capacity = 200;
+        leftText = new StringBuilder();
+        leftText.Capacity = 200;
+        rightText = new StringBuilder();
+        rightText.Capacity = 200;
         Screen.sleepTimeout = SleepTimeout.NeverSleep;
     }
 
@@ -45,12 +52,17 @@ public class StatsManager_GUI : MonoBehaviour
 
         if (timeNow > lastInterval + updateInterval)
         {
-            if (!text)
+            if (!leftSide)
             {
-                text.gameObject.hideFlags = HideFlags.HideAndDontSave;
-                text.gameObject.transform.position = new Vector3(0, 0, 0);
+                leftSide.gameObject.hideFlags = HideFlags.HideAndDontSave;
+                leftSide.gameObject.transform.position = new Vector3(0, 0, 0);
             }
 
+            if (!rightSide)
+            {
+                rightSide.gameObject.hideFlags = HideFlags.HideAndDontSave;
+                rightSide.gameObject.transform.position = new Vector3(0, 0, 0);
+            }
             float fps = frames / (timeNow - lastInterval);
             float ms = 1000.0f / Mathf.Max(fps, 0.00001f);
 
@@ -58,25 +70,23 @@ public class StatsManager_GUI : MonoBehaviour
             framesav += fps;
             float fpsav = framesav / framesavtick;
 
-            tx.Length = 0;
+            leftText.Length = 0;
+            rightText.Length = 0;
 
-            tx.AppendFormat("Time : {0} ms\nCurrent FPS: {1}\nAvgFPS: {2}\n\nGPU memory : {3}\nSys Memory : {4}\n", ms, fps, fpsav, SystemInfo.graphicsMemorySize, SystemInfo.systemMemorySize)
+            leftText.AppendFormat("Time : {0} ms\nCurrent FPS: {1}\nAvgFPS: {2}", ms, fps, fpsav);
 
-            .AppendFormat("TotalAllocatedMemory : {0}mb\nTotalReservedMemory : {1}mb\nTotalUnusedReservedMemory : {2}mb",
-            Profiler.GetTotalAllocatedMemoryLong() / 1048576,
-            Profiler.GetTotalReservedMemoryLong() / 1048576,
-            Profiler.GetTotalUnusedReservedMemoryLong() / 1048576
-            ).AppendFormat("\nTotalAllocatedMemoryForGraphicsDriver: {0}mb", Profiler.GetAllocatedMemoryForGraphicsDriver() / 1048576);
 #if UNITY_EDITOR
-            tx.AppendFormat("\n\nDrawCalls : {0}\nUsed Texture Memory : {1}\nrenderedTextureCount : {2}", UnityStats.drawCalls, UnityStats.usedTextureMemorySize / 1048576, UnityStats.usedTextureCount);
+            leftText.AppendFormat("\n\nDrawCalls : {0}\nUsed Texture Memory : {1}\nrenderedTextureCount : {2}", UnityStats.drawCalls, UnityStats.usedTextureMemorySize / 1048576, UnityStats.usedTextureCount);
 #endif
+            rightText.AppendFormat("GPU memory : {3}\nSys Memory : {4}\n" + "TotalAllocatedMemory : {0}mb\nTotalReservedMemory : {1}mb\nTotalUnusedReservedMemory : {2}mb",
+                SystemInfo.graphicsMemorySize, SystemInfo.systemMemorySize,
+                Profiler.GetTotalAllocatedMemoryLong() / 1048576,
+                Profiler.GetTotalReservedMemoryLong() / 1048576,
+                Profiler.GetTotalUnusedReservedMemoryLong() / 1048576)
+                .AppendFormat("\nTotalAllocatedMemoryForGraphicsDriver: {0}mb", Profiler.GetAllocatedMemoryForGraphicsDriver() / 1048576);
 
-            //var vertices = 0; 
-            //var triangles = 0;
-            //(vertices, triangles) = ChunksManager.Instance.GetAllMeshesVerticesAndTriangles();
-            //tx.AppendFormat("\n\nRendered:\nVertices: {0}\nTriangles: {1}\n", (vertices).ToString("N0"), (triangles).ToString("N0"));
-
-            text.text = tx.ToString();
+            leftSide.text = leftText.ToString();
+            rightSide.text = rightText.ToString();
             frames = 0;
             lastInterval = timeNow;
         }

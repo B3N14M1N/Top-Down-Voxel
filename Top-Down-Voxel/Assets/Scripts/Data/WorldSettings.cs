@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public static class WorldSettings
@@ -8,7 +6,7 @@ public static class WorldSettings
 
     public static int ChunkWidth = 16;
 
-    public static int ChunkHeight = 128;
+    public static int ChunkHeight = 255;
 
     public static int TotalVoxelsInChunk => (ChunkWidth + 2) * (ChunkWidth + 2) * ChunkHeight;
     public static int RenderedVoxelsInChunk => ChunkWidth * ChunkWidth * ChunkHeight;

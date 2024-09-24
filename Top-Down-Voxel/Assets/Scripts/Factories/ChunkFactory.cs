@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -19,6 +18,8 @@ public class ChunkFactory : MonoBehaviour
     public int materialIndex = 0;
     public Material Material { get { return materials[materialIndex]; } }
     public bool canChangeMaterial = true;
+
+    public KeyCode MaterialChangeKey = KeyCode.M;
     #endregion
 
     private static ChunkFactory instance;
@@ -62,7 +63,7 @@ public class ChunkFactory : MonoBehaviour
     private float time = 0f;
     void Update()
     {
-        if (Input.GetKeyUp(KeyCode.Alpha1) && canChangeMaterial)
+        if (Input.GetKeyUp(MaterialChangeKey) && canChangeMaterial)
         {
             materialIndex = materialIndex == materials.Count - 1 ? 0 : ++materialIndex;
         }
