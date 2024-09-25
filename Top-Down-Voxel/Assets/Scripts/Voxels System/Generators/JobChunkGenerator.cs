@@ -9,7 +9,7 @@ using UnityEngine.Rendering;
 
 public class JobChunkGenerator
 {
-    public static int Processed {  get; private set; }
+    public static int Processed { get; private set; }
     public NativeArray<Voxel> voxels;
     public NativeArray<HeightMap> heightMaps;
     public MeshDataStruct meshData;
@@ -110,7 +110,7 @@ public class JobChunkGenerator
     {
         if (MeshGenerated && meshData.Initialized)
         {
-            if(mesh == null)
+            if (mesh == null)
                 mesh = new Mesh() { indexFormat = IndexFormat.UInt32 };
             meshData.UploadToMesh(ref mesh);
         }
@@ -121,12 +121,12 @@ public class JobChunkGenerator
         dataHandle.Complete();
         meshHandle.Complete();
         meshData.Dispose();
-        if(noiseParameters.IsCreated) noiseParameters.Dispose();
-        if(octaveOffsets.IsCreated) octaveOffsets.Dispose();
+        if (noiseParameters.IsCreated) noiseParameters.Dispose();
+        if (octaveOffsets.IsCreated) octaveOffsets.Dispose();
         if (disposeData)
         {
-            if(voxels.IsCreated) voxels.Dispose();
-            if(heightMaps.IsCreated) heightMaps.Dispose();
+            if (voxels.IsCreated) voxels.Dispose();
+            if (heightMaps.IsCreated) heightMaps.Dispose();
         }
 
     }
@@ -256,7 +256,7 @@ public struct MeshDataStruct
     public bool Initialized;
     public void Initialize()
     {
-        if(Initialized)
+        if (Initialized)
             Dispose();
         Initialized = true;
         count = new NativeArray<int>(2, Allocator.Persistent);
@@ -270,19 +270,19 @@ public struct MeshDataStruct
     public void Dispose()
     {
         Initialized = false;
-        if(vertices.IsCreated) vertices.Dispose();
-        if(indices.IsCreated) indices.Dispose();
-        if(normals.IsCreated) normals.Dispose();
-        if(uvs.IsCreated) uvs.Dispose();
-        if(colors32.IsCreated) colors32.Dispose();
-        if(count.IsCreated) count.Dispose();
+        if (vertices.IsCreated) vertices.Dispose();
+        if (indices.IsCreated) indices.Dispose();
+        if (normals.IsCreated) normals.Dispose();
+        if (uvs.IsCreated) uvs.Dispose();
+        if (colors32.IsCreated) colors32.Dispose();
+        if (count.IsCreated) count.Dispose();
     }
 
     public void UploadToMesh(ref Mesh mesh)
     {
         if (Initialized && mesh != null)
         {
-            mesh.SetVertices(vertices.Reinterpret<Vector3>(), 0, count[0],MeshUpdateFlags.DontRecalculateBounds & MeshUpdateFlags.DontValidateIndices & MeshUpdateFlags.DontNotifyMeshUsers);
+            mesh.SetVertices(vertices.Reinterpret<Vector3>(), 0, count[0], MeshUpdateFlags.DontRecalculateBounds & MeshUpdateFlags.DontValidateIndices & MeshUpdateFlags.DontNotifyMeshUsers);
             mesh.SetIndices(indices, 0, count[1], MeshTopology.Triangles, 0, false);
             mesh.SetNormals(normals.Reinterpret<Vector3>(), 0, count[0], MeshUpdateFlags.DontRecalculateBounds & MeshUpdateFlags.DontValidateIndices & MeshUpdateFlags.DontNotifyMeshUsers);
             mesh.SetUVs(0, uvs.Reinterpret<Vector2>(), 0, count[0], MeshUpdateFlags.DontRecalculateBounds & MeshUpdateFlags.DontValidateIndices & MeshUpdateFlags.DontNotifyMeshUsers);
@@ -337,7 +337,7 @@ public struct ChunkMeshJob : IJob
     public void Execute()
     {
         #region Allocations
-       NativeArray<float3>Vertices = new NativeArray<float3>(8, Allocator.Temp)
+        NativeArray<float3> Vertices = new NativeArray<float3>(8, Allocator.Temp)
         {
             [0] = new float3(0, 1, 0), //0
             [1] = new float3(1, 1, 0), //1
@@ -446,7 +446,7 @@ public struct ChunkMeshJob : IJob
                             meshData.normals[meshData.count[0] + j] = FaceCheck[i];
                             meshData.colors32[meshData.count[0] + j] = new Color32((byte)y, 0, 0, 0);
                         }
-                        for(int k = 0; k < 6; k++)
+                        for (int k = 0; k < 6; k++)
                         {
                             meshData.indices[meshData.count[1] + k] = meshData.count[0] + FaceIndices[k];
                         }

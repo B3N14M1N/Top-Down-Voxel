@@ -2,11 +2,11 @@ using UnityEngine;
 
 public class DrawRendererBounds : MonoBehaviour
 {
-    private Renderer cachedRenderer;
+    // wont work ok when the chunk mesh is updated
+    //private Renderer cachedRenderer;
     public void OnDrawGizmosSelected()
     {
-        if(cachedRenderer == null)
-            cachedRenderer = GetComponent<Renderer>();
+        var cachedRenderer = GetComponent<Renderer>();
         if (cachedRenderer == null)
             return;
         var bounds = cachedRenderer.bounds;

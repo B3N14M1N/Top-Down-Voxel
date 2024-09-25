@@ -5,11 +5,9 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
-using static UnityEngine.ParticleSystem;
 
 public class JobChunkColliderGenerator
 {
-    public NativeArray<HeightMap>.ReadOnly HeightMap;
     public MeshColliderDataStruct ColliderData;
     public Vector3 chunkPos;
 
@@ -19,29 +17,20 @@ public class JobChunkColliderGenerator
     public bool Generated { get; private set; }
     public JobChunkColliderGenerator(NativeArray<HeightMap>.ReadOnly heightMap, Vector3 chunkPos)
     {
-        HeightMap = heightMap;
-        GenerationStarted = false;
-        Generated = false;
         this.chunkPos = chunkPos;
-        ScheduleGeneration();
+        ColliderData.Initialize();
+        var dataJob = new ChunkMeshColliderJob()
+        {
+            chunkWidth = WorldSettings.ChunkWidth,
+            chunkHeight = WorldSettings.ChunkHeight,
+            heightMaps = heightMap,
+            colliderData = ColliderData,
+        };
+        GenerationStarted = true;
+        Generated = false;
+        dataHandle = dataJob.Schedule();
     }
 
-    public void ScheduleGeneration()
-    {
-        if(!GenerationStarted && !Generated)
-        {
-            ColliderData.Initialize();
-            var dataJob = new ChunkMeshColliderJob()
-            {
-                chunkWidth = WorldSettings.ChunkWidth,
-                chunkHeight = WorldSettings.ChunkHeight,
-                heightMaps = this.HeightMap,
-                colliderData = ColliderData,
-            };
-            GenerationStarted = true;
-            dataHandle = dataJob.Schedule();
-        }
-    }
     public bool CompletedGeneration()
     {
         if (GenerationStarted && !Generated && dataHandle.IsCompleted)
@@ -147,11 +136,13 @@ public struct ChunkMeshColliderJob : IJob
         #region Allocations
         NativeArray<float3> Vertices = new NativeArray<float3>(8, Allocator.Temp)
         {
+            // top
             [0] = new float3(0, 1, 0), //0
             [1] = new float3(1, 1, 0), //1
             [2] = new float3(1, 1, 1), //2
             [3] = new float3(0, 1, 1), //3
 
+            // bottom
             [4] = new float3(0, 0, 0), //4
             [5] = new float3(1, 0, 0), //5
             [6] = new float3(1, 0, 1), //6
@@ -197,17 +188,73 @@ public struct ChunkMeshColliderJob : IJob
             [4] = 2,
             [5] = 1
         };
+
+        NativeArray<int> SidesNeighbourVerticesIndices = new NativeArray<int>(8, Allocator.Temp)
+        {
+            // on z axis
+            [0] = -4 * (chunkWidth) + 3,
+            [1] = -4 * (chunkWidth) + 2,
+            [2] = 4 * (chunkWidth),
+            [3] = 4 * (chunkWidth) + 1,
+
+            // on x axis
+            [4] = -3,
+            [5] = 4,
+            [6] = 7,
+            [7] = -2,
+
+        };
+
+        NativeArray<int> SideFaceIndices = new NativeArray<int>(24, Allocator.Temp)
+        {
+            //back
+            [0] = SidesNeighbourVerticesIndices[0],
+            [1] = 0,
+            [2] = 1,
+            [3] = SidesNeighbourVerticesIndices[0],
+            [4] = 1,
+            [5] = SidesNeighbourVerticesIndices[1],
+
+            // right
+            [6] = SidesNeighbourVerticesIndices[5],
+            [7] = 1,
+            [8] = 2,
+            [9] = SidesNeighbourVerticesIndices[5],
+            [10] = 2,
+            [11] = SidesNeighbourVerticesIndices[6],
+
+            //front
+            [12] = SidesNeighbourVerticesIndices[1],
+            [13] = 0,
+            [14] = 0,
+            [15] = SidesNeighbourVerticesIndices[1],
+            [16] = 0,
+            [17] = SidesNeighbourVerticesIndices[0],
+
+            //left
+            [18] = 0,
+            [19] = SidesNeighbourVerticesIndices[5],
+            [20] = SidesNeighbourVerticesIndices[6],
+            [21] = 0,
+            [22] = SidesNeighbourVerticesIndices[6],
+            [23] = 0
+        };
         #endregion
 
         #region Execution
-        int sidesVerticesStartIndex = 4 * chunkWidth * chunkWidth;
-        for (int x = 1; x <= chunkWidth; x++)
+
+        colliderData.count[0] = 0;
+        colliderData.count[1] = 0;
+
+        for (int z = 1; z <= chunkWidth; z++)
         {
-            for (int z = 1; z <= chunkWidth; z++)
+            for (int x = 1; x <= chunkWidth; x++)
             {
                 float3 voxelPos = new float3(x - 1, (int)(RWStructs.GetSolid(heightMaps[GetMapIndex(x, z)])) - 1, z - 1);
 
-                int i = 4; //Top face
+                #region Top Face
+
+                int i = 4; // top face index
 
                 for (int j = 0; j < 4; j++)
                 {
@@ -219,6 +266,23 @@ public struct ChunkMeshColliderJob : IJob
                 }
                 colliderData.count[0] += 4;
                 colliderData.count[1] += 6;
+                #endregion
+
+                #region Sides
+
+                // 0 back 1 right 2 front 3 left
+                for (i = 0; i < 2; i++)
+                {
+                    if ((z > 1 && i == 0) || (x < chunkWidth && i == 1))
+                    {
+                        for (int k = 0; k < 6; k++)
+                        {
+                            colliderData.indices[colliderData.count[1] + k] = colliderData.count[0] - 4 + SideFaceIndices[i * 6 + k];
+                        }
+                        colliderData.count[1] += 6;
+                    }
+                }
+                #endregion
             }
         }
         #endregion
@@ -228,6 +292,8 @@ public struct ChunkMeshColliderJob : IJob
         if (Vertices.IsCreated) Vertices.Dispose();
         if (FaceVerticeIndex.IsCreated) FaceVerticeIndex.Dispose();
         if (FaceIndices.IsCreated) FaceIndices.Dispose();
+        if(SidesNeighbourVerticesIndices.IsCreated) SidesNeighbourVerticesIndices.Dispose();
+        if (SideFaceIndices.IsCreated) SideFaceIndices.Dispose();
         #endregion
     }
     #endregion
