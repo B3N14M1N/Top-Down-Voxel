@@ -174,7 +174,7 @@ public class Chunk
         chunkInstance.name = $"Chunk Instance [{(int)Position.x}]:[{(int)Position.z}]";
         chunkInstance.transform.position = new Vector3(Position.x, 0, Position.z) * WorldSettings.ChunkWidth;
     }
-    public void UploadMesh(Mesh mesh)
+    public void UploadMesh(ref Mesh mesh)
     {
         if (chunkInstance != null)
         {
@@ -200,7 +200,7 @@ public class Chunk
 
         }
     }
-    public void UpdateCollider(Mesh mesh)
+    public void UpdateCollider(ref Mesh mesh)
     {
         if (meshCollider == null)
         {
@@ -208,6 +208,8 @@ public class Chunk
         }
         if (meshCollider != null)
         {
+            if(meshCollider.sharedMesh != null) 
+                GameObject.Destroy(meshCollider.sharedMesh);
             meshCollider.sharedMesh = mesh;
         }
     }
@@ -223,7 +225,7 @@ public class Chunk
 
     #region Clear & Disposing
 
-    private void ClearMesh()
+    private void ClearMeshAndCollider()
     {
         if (chunkInstance != null)
         {
@@ -235,13 +237,14 @@ public class Chunk
             {
                 GameObject.Destroy(meshFilter.sharedMesh);
             }
+
             if (meshCollider == null)
             {
                 chunkInstance.TryGetComponent<MeshCollider>(out meshCollider);
             }
             if (meshCollider != null && meshCollider.sharedMesh != null)
             {
-                meshCollider.sharedMesh = null;
+                GameObject.Destroy(meshCollider.sharedMesh);
             }
         }
     }
@@ -251,7 +254,7 @@ public class Chunk
         if (Dirty)
             Debug.Log($"Chunk {Position} needs saving.");
 
-        ClearMesh();
+        ClearMeshAndCollider();
 
         if (voxels.IsCreated) voxels.Dispose();
         if (heightMap.IsCreated) heightMap.Dispose();
@@ -266,7 +269,7 @@ public class Chunk
     {
         if (voxels.IsCreated) voxels.Dispose();
         if (heightMap.IsCreated) heightMap.Dispose();
-        ClearMesh();
+        ClearMeshAndCollider();
 
         if(chunkInstance != null)
             GameObject.Destroy(chunkInstance);

@@ -6,6 +6,8 @@ public class ChunkFactory : MonoBehaviour
 {
     #region Fields
     public const string ChunkMeshCreationString = "ChunkMeshCreationString";
+    private float time = 0f;
+
     [Header("Noise Parameters")]
     public NoiseParametersScriptableObject noiseParameters;
     private Vector2Int[] octaveOffsets;
@@ -14,6 +16,7 @@ public class ChunkFactory : MonoBehaviour
     public List<Chunk> chunksToProccess = new List<Chunk>();
 
     public List<JobChunkGenerator> jobs = new List<JobChunkGenerator>();
+    public List<JobChunkColliderGenerator> priorityJobs = new List<JobChunkColliderGenerator>();
     [Header("Materials")]
     public List<Material> materials = new List<Material>();
     public int materialIndex = 0;
@@ -21,7 +24,6 @@ public class ChunkFactory : MonoBehaviour
     public bool canChangeMaterial = true;
 
     public KeyCode MaterialChangeKey = KeyCode.M;
-    #endregion
 
     private static ChunkFactory instance;
     public static ChunkFactory Instance
@@ -39,6 +41,10 @@ public class ChunkFactory : MonoBehaviour
             instance = value;
         }
     }
+
+    #endregion
+
+    #region Initializations
 
     public void Awake()
     {
@@ -60,8 +66,8 @@ public class ChunkFactory : MonoBehaviour
             octaveOffsets[i] = new Vector2Int(rnd.Next(-10000, 10000), rnd.Next(-10000, 10000));
         }
     }
+    #endregion
 
-    private float time = 0f;
     void Update()
     {
         if (Input.GetKeyUp(MaterialChangeKey) && canChangeMaterial)
@@ -76,7 +82,10 @@ public class ChunkFactory : MonoBehaviour
             {
                 var timeNow = Time.realtimeSinceStartup;
                 if (jobs[i].CompleteDataGeneration())
+                {
+                    priorityJobs.Add(new JobChunkColliderGenerator(jobs[i].heightMaps.AsReadOnly(), jobs[i].chunkPos));
                     jobs[i].ScheduleMeshGeneration();
+                }
                 else
                 if (jobs[i].CompleteMeshGeneration())
                 {
@@ -88,8 +97,7 @@ public class ChunkFactory : MonoBehaviour
                         jobs[i].SetMesh(ref mesh);
                         if (mesh != null)
                         {
-                            chunk.UploadMesh(mesh);
-                            chunk.UpdateCollider(mesh);
+                            chunk.UploadMesh(ref mesh);
                         }
                     }
                     jobs[i].Dispose();
@@ -100,6 +108,25 @@ public class ChunkFactory : MonoBehaviour
 
                     if (loaded >= PlayerSettings.ChunksToLoad)
                         break;
+                }
+            }
+        }
+        for (int i = 0; i < priorityJobs.Count; i++)
+        {
+            if(priorityJobs[i] != null && priorityJobs[i].CompletedGeneration())
+            {
+                Chunk chunk = ChunksManager.Instance.GetChunk(priorityJobs[i].chunkPos);
+                if (chunk != null)
+                {
+                    Mesh mesh = new Mesh() { indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+                    priorityJobs[i].SetCollider(ref mesh);
+                    if (mesh != null)
+                    {
+                        chunk.UpdateCollider(ref mesh);
+                    }
+                    priorityJobs[i].Dispose();
+                    priorityJobs.RemoveAt(i);
+                    i--;
                 }
             }
         }
@@ -133,6 +160,13 @@ public class ChunkFactory : MonoBehaviour
 
     public void Dispose()
     {
+        for (int i = 0; i < priorityJobs.Count; i++)
+        {
+            priorityJobs[i].Dispose();
+            priorityJobs[i] = null;
+            priorityJobs.RemoveAt(i);
+            i--;
+        }
         for (int i = 0; i < jobs.Count; i++)
         {
             jobs[i].Dispose(disposeData: true);

@@ -5,32 +5,38 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+using static UnityEngine.ParticleSystem;
 
 public class JobChunkColliderGenerator
 {
     public NativeArray<HeightMap>.ReadOnly HeightMap;
     public MeshColliderDataStruct ColliderData;
+    public Vector3 chunkPos;
 
     public JobHandle dataHandle;
 
     public bool GenerationStarted { get; private set; }
     public bool Generated { get; private set; }
-    public JobChunkColliderGenerator(NativeArray<HeightMap>.ReadOnly heightMap)
+    public JobChunkColliderGenerator(NativeArray<HeightMap>.ReadOnly heightMap, Vector3 chunkPos)
     {
         HeightMap = heightMap;
         GenerationStarted = false;
         Generated = false;
+        this.chunkPos = chunkPos;
+        ScheduleGeneration();
     }
 
     public void ScheduleGeneration()
     {
         if(!GenerationStarted && !Generated)
         {
+            ColliderData.Initialize();
             var dataJob = new ChunkMeshColliderJob()
             {
                 chunkWidth = WorldSettings.ChunkWidth,
                 chunkHeight = WorldSettings.ChunkHeight,
                 heightMaps = this.HeightMap,
+                colliderData = ColliderData,
             };
             GenerationStarted = true;
             dataHandle = dataJob.Schedule();
