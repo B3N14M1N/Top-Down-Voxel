@@ -9,6 +9,10 @@ public class Chunk
 
     private GameObject chunkInstance;
 
+    private MeshFilter meshFilter;
+    private MeshRenderer meshRenderer;
+    private MeshCollider meshCollider;
+
     private NativeArray<Voxel> voxels;
     private NativeArray<HeightMap> heightMap;
 
@@ -35,11 +39,11 @@ public class Chunk
     {
         get
         {
-            if (chunkInstance != null && chunkInstance.TryGetComponent<Renderer>(out var Renderer))
+            if (meshRenderer == null && chunkInstance!=null)
             {
-                return Renderer;
+                chunkInstance.TryGetComponent<MeshRenderer>(out meshRenderer);
             }
-            return null;
+            return meshRenderer;
         }
     }
     public bool Render
@@ -152,10 +156,10 @@ public class Chunk
         if (chunkInstance == null)
         {
             chunkInstance = new GameObject();
-            chunkInstance.AddComponent<MeshRenderer>();
-            chunkInstance.AddComponent<MeshFilter>();
-            chunkInstance.AddComponent<MeshCollider>();
-            //chunkInstance.AddComponent<DrawRendererBounds>();
+            meshRenderer = chunkInstance.AddComponent<MeshRenderer>();
+            meshFilter = chunkInstance.AddComponent<MeshFilter>();
+            meshCollider = chunkInstance.AddComponent<MeshCollider>();
+            chunkInstance.AddComponent<DrawRendererBounds>();
         }
         chunkInstance.name = $"Chunk Instance [{(int)Position.x}]:[{(int)Position.z}]";
         chunkInstance.transform.position = new Vector3(Position.x, 0, Position.z) * WorldSettings.ChunkWidth;
@@ -170,26 +174,43 @@ public class Chunk
         chunkInstance.name = $"Chunk Instance [{(int)Position.x}]:[{(int)Position.z}]";
         chunkInstance.transform.position = new Vector3(Position.x, 0, Position.z) * WorldSettings.ChunkWidth;
     }
-    public void UploadMesh(ref Mesh mesh)
+    public void UploadMesh(Mesh mesh)
     {
-        if (chunkInstance.TryGetComponent<MeshFilter>(out var filter))
+        if (chunkInstance != null)
         {
-            if (filter.sharedMesh != null)
-                GameObject.Destroy(filter.sharedMesh);
-            filter.sharedMesh = mesh;
-        }
+            if (meshFilter == null)
+            {
+                chunkInstance.TryGetComponent<MeshFilter>(out meshFilter);
+            }
+            if (meshFilter != null)
+            {
+                if (meshFilter.sharedMesh != null)
+                    GameObject.Destroy(meshFilter.sharedMesh);
+                meshFilter.sharedMesh = mesh;
+            }
 
-        if(chunkInstance.TryGetComponent<MeshRenderer>(out var renderer))
-        {
-            renderer.sharedMaterial = ChunkFactory.Instance.Material;
-        }
+            if (meshRenderer == null)
+            {
+                chunkInstance.TryGetComponent<MeshRenderer>(out meshRenderer);
+            }
+            if (meshRenderer != null)
+            {
+                meshRenderer.sharedMaterial = ChunkFactory.Instance.Material;
+            }
 
-        if(chunkInstance.TryGetComponent<MeshCollider>(out var collider))
-        {
-            collider.sharedMesh = mesh;
         }
     }
-
+    public void UpdateCollider(Mesh mesh)
+    {
+        if (meshCollider == null)
+        {
+            chunkInstance.TryGetComponent<MeshCollider>(out meshCollider);
+        }
+        if (meshCollider != null)
+        {
+            meshCollider.sharedMesh = mesh;
+        }
+    }
     public void UploadData(ref NativeArray<Voxel> voxels, ref NativeArray<HeightMap> heightMap)
     {
         if (this.voxels.IsCreated) this.voxels.Dispose();
@@ -206,13 +227,21 @@ public class Chunk
     {
         if (chunkInstance != null)
         {
-            if (chunkInstance.TryGetComponent<MeshFilter>(out var filter) && filter.sharedMesh != null)
+            if (meshFilter == null)
             {
-                GameObject.Destroy(filter.sharedMesh);
+                chunkInstance.TryGetComponent<MeshFilter>(out meshFilter);
             }
-            if (chunkInstance.TryGetComponent<MeshCollider>(out var collider) && collider.sharedMesh != null)
+            if (meshFilter != null && meshFilter.sharedMesh != null)
             {
-                collider.sharedMesh = null;
+                GameObject.Destroy(meshFilter.sharedMesh);
+            }
+            if (meshCollider == null)
+            {
+                chunkInstance.TryGetComponent<MeshCollider>(out meshCollider);
+            }
+            if (meshCollider != null && meshCollider.sharedMesh != null)
+            {
+                meshCollider.sharedMesh = null;
             }
         }
     }

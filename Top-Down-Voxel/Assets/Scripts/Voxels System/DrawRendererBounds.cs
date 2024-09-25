@@ -2,16 +2,16 @@ using UnityEngine;
 
 public class DrawRendererBounds : MonoBehaviour
 {
-    // Draws a wireframe box around the selected object,
-    // indicating world space bounding volume.
+    private Renderer cachedRenderer;
     public void OnDrawGizmosSelected()
     {
-        var r = GetComponent<Renderer>();
-        if (r == null)
+        if(cachedRenderer == null)
+            cachedRenderer = GetComponent<Renderer>();
+        if (cachedRenderer == null)
             return;
-        var bounds = r.bounds;
+        var bounds = cachedRenderer.bounds;
         Gizmos.matrix = Matrix4x4.identity;
-        Gizmos.color = Color.blue;
+        Gizmos.color = Color.black;
         Gizmos.DrawWireCube(bounds.center, bounds.extents * 2);
     }
 }

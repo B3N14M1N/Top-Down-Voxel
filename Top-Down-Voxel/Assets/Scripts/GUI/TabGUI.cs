@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 [Serializable]
 [RequireComponent(typeof(Button))]
-public class Tab_GUI : MonoBehaviour
+public class TabGUI : MonoBehaviour
 {
     public Button Button {  get; private set; }
     public GameObject TabContent;
@@ -55,6 +55,6 @@ public class Tab_GUI : MonoBehaviour
 
     public void Selected()
     {
-        transform.GetComponentInParent<TabManager_GUI>()?.OnTabChange(this);
+        transform.GetComponentInParent<TabManagerGUI>()?.OnTabChange(this);
     }
 }

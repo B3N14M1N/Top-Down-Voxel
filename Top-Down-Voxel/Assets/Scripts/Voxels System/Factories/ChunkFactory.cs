@@ -5,6 +5,7 @@ using UnityEngine;
 public class ChunkFactory : MonoBehaviour
 {
     #region Fields
+    public const string ChunkMeshCreationString = "ChunkMeshCreationString";
     [Header("Noise Parameters")]
     public NoiseParametersScriptableObject noiseParameters;
     private Vector2Int[] octaveOffsets;
@@ -73,6 +74,7 @@ public class ChunkFactory : MonoBehaviour
         {
             if (jobs[i] != null)
             {
+                var timeNow = Time.realtimeSinceStartup;
                 if (jobs[i].CompleteDataGeneration())
                     jobs[i].ScheduleMeshGeneration();
                 else
@@ -85,18 +87,22 @@ public class ChunkFactory : MonoBehaviour
                         Mesh mesh = new Mesh() { indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
                         jobs[i].SetMesh(ref mesh);
                         if (mesh != null)
-                            chunk.UploadMesh(ref mesh);
+                        {
+                            chunk.UploadMesh(mesh);
+                            chunk.UpdateCollider(mesh);
+                        }
                     }
                     jobs[i].Dispose();
                     jobs.RemoveAt(i);
                     i--;
                     loaded++;
+                    AvgCounter.UpdateTimer(ChunkMeshCreationString, (Time.realtimeSinceStartup - timeNow) * 1000f);
+
                     if (loaded >= PlayerSettings.ChunksToLoad)
                         break;
                 }
             }
         }
-
         time += Time.deltaTime;
         if (time >= PlayerSettings.TimeToLoadNextChunks)
         {
@@ -129,7 +135,7 @@ public class ChunkFactory : MonoBehaviour
     {
         for (int i = 0; i < jobs.Count; i++)
         {
-            jobs[i].Dispose(disposeData : true);
+            jobs[i].Dispose(disposeData: true);
             jobs[i] = null;
             jobs.RemoveAt(i);
             i--;

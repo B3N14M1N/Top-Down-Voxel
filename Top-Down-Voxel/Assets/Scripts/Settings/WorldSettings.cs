@@ -8,9 +8,18 @@ public static class WorldSettings
 
     public static int ChunkHeight = 255;
 
+    public static Bounds RecalculatedBounds
+    {
+        get
+        {
+            return new Bounds(new Vector3(ChunkWidth, ChunkHeight, ChunkWidth) * 0.5f, new Vector3(ChunkWidth, ChunkHeight, ChunkWidth));
+        }
+    }
+
+    public static Bounds ChunkBounds = RecalculatedBounds;
+
     public static int TotalVoxelsInChunk => (ChunkWidth + 2) * (ChunkWidth + 2) * ChunkHeight;
     public static int RenderedVoxelsInChunk => ChunkWidth * ChunkWidth * ChunkHeight;
-
 
     public static bool ChunksInRange(Vector3 center, Vector3 position, int range)
     {

@@ -27,7 +27,7 @@ public enum VoxelType
     water = 16,
 }
 
-public static class ReadWriteStructs
+public static class RWStructs
 {
     #region Voxel
 

@@ -4,11 +4,11 @@ using System.Linq;
 using UnityEngine;
 
 [Serializable]
-public class TabManager_GUI : MonoBehaviour
+public class TabManagerGUI : MonoBehaviour
 {
     public Color SelectedColor;
     public Color UnselectedColor;
-    private List<Tab_GUI> Tabs;
+    private List<TabGUI> Tabs;
 
 
     public delegate void TabChanged();
@@ -17,7 +17,7 @@ public class TabManager_GUI : MonoBehaviour
     public void Awake()
     {
         OnTabChanged += CloseTabs;
-        Tabs = GetComponentsInChildren<Tab_GUI>().ToList();
+        Tabs = GetComponentsInChildren<TabGUI>().ToList();
     }
 
     public void OnEnable()
@@ -35,7 +35,7 @@ public class TabManager_GUI : MonoBehaviour
         }
     }
 
-    public void OnTabChange(Tab_GUI tab)
+    public void OnTabChange(TabGUI tab)
     {
         OnTabChanged?.Invoke();
 

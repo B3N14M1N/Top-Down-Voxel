@@ -1,9 +1,11 @@
 using System;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class JobChunkGenerator
 {
@@ -22,10 +24,8 @@ public class JobChunkGenerator
     public bool DataGenerated { get; private set; }
     public bool MeshGenerated { get; private set; }
 
-    private ChunkDataJob dataJob;
     public JobHandle dataHandle;
 
-    private ChunkMeshJob meshJob;
     public JobHandle meshHandle;
 
     public JobChunkGenerator(Vector3 chunkPos, NoiseParameters[] noiseParameters, Vector2Int[] octaveOffsets, float globalScale)
@@ -49,7 +49,7 @@ public class JobChunkGenerator
         {
             voxels = new NativeArray<Voxel>((WorldSettings.ChunkWidth + 2) * WorldSettings.ChunkHeight * (WorldSettings.ChunkWidth + 2), Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             heightMaps = new NativeArray<HeightMap>((WorldSettings.ChunkWidth + 2) * (WorldSettings.ChunkWidth + 2), Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            dataJob = new ChunkDataJob()
+            var dataJob = new ChunkDataJob()
             {
                 chunkWidth = WorldSettings.ChunkWidth,
                 chunkHeight = WorldSettings.ChunkHeight,
@@ -82,7 +82,7 @@ public class JobChunkGenerator
         {
             meshData.Initialize();
 
-            meshJob = new ChunkMeshJob()
+            var meshJob = new ChunkMeshJob()
             {
                 chunkWidth = WorldSettings.ChunkWidth,
                 chunkHeight = WorldSettings.ChunkHeight,
@@ -106,16 +106,15 @@ public class JobChunkGenerator
         }
         return false;
     }
-    public Mesh SetMesh(ref Mesh mesh)
+    public void SetMesh(ref Mesh mesh)
     {
         if (MeshGenerated && meshData.Initialized)
         {
             if(mesh == null)
-                mesh = new Mesh() { indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+                mesh = new Mesh() { indexFormat = IndexFormat.UInt32 };
             meshData.UploadToMesh(ref mesh);
-            return mesh;
         }
-        return null;
+        //return ref mesh;
     }
     public void Dispose(bool disposeData = false)
     {
@@ -146,12 +145,17 @@ public struct ChunkDataJob : IJobParallelFor
     [ReadOnly]
     public float3 chunkPos;
     [ReadOnly]
+    [NativeDisableContainerSafetyRestriction]
     public NativeArray<NoiseParameters> noiseParameters;
     [ReadOnly]
+    [NativeDisableContainerSafetyRestriction]
     public NativeArray<int2> octaveOffsets;
 
     [NativeDisableParallelForRestriction]
+    [NativeDisableContainerSafetyRestriction]
     public NativeArray<Voxel> voxels;
+    [NativeDisableParallelForRestriction]
+    [NativeDisableContainerSafetyRestriction]
     public NativeArray<HeightMap> heightMaps;
 
     public void Execute(int index)
@@ -180,7 +184,7 @@ public struct ChunkDataJob : IJobParallelFor
             height = chunkHeight;
         }
 
-        ReadWriteStructs.SetSolid(ref heightMap, (uint)height);
+        RWStructs.SetSolid(ref heightMap, (uint)height);
         heightMaps[index] = heightMap;
         for (int y = 0; y < chunkHeight; y++)
         {
@@ -229,12 +233,24 @@ public struct ChunkDataJob : IJobParallelFor
 [Serializable]
 public struct MeshDataStruct
 {
+    [NativeDisableParallelForRestriction]
+    [NativeDisableContainerSafetyRestriction]
     public NativeArray<float3> vertices;
+    [NativeDisableParallelForRestriction]
+    [NativeDisableContainerSafetyRestriction]
     public NativeArray<int> indices;
+    [NativeDisableParallelForRestriction]
+    [NativeDisableContainerSafetyRestriction]
     public NativeArray<float3> normals;
+    [NativeDisableParallelForRestriction]
+    [NativeDisableContainerSafetyRestriction]
     public NativeArray<float2> uvs;
-    public NativeArray<Color> colors32;
+    [NativeDisableParallelForRestriction]
+    [NativeDisableContainerSafetyRestriction]
+    public NativeArray<Color32> colors32;
 
+    [NativeDisableParallelForRestriction]
+    [NativeDisableContainerSafetyRestriction]
     public NativeArray<int> count;
 
     public bool Initialized;
@@ -245,11 +261,11 @@ public struct MeshDataStruct
         Initialized = true;
         count = new NativeArray<int>(2, Allocator.Persistent);
         //divide by 2 -> cant be more vertices & faces than half of the voxels.
-        vertices = new NativeArray<float3>(WorldSettings.RenderedVoxelsInChunk * 6 * 4 / 2, Allocator.Persistent);
-        indices = new NativeArray<int>(WorldSettings.RenderedVoxelsInChunk * 6 * 6 / 2, Allocator.Persistent);
-        normals = new NativeArray<float3>(WorldSettings.RenderedVoxelsInChunk * 6 * 4 / 2, Allocator.Persistent);
-        uvs = new NativeArray<float2>(WorldSettings.RenderedVoxelsInChunk * 6 * 4 / 2, Allocator.Persistent);
-        colors32 = new NativeArray<Color>(WorldSettings.RenderedVoxelsInChunk * 6 * 4 / 2, Allocator.Persistent);
+        vertices = new NativeArray<float3>(WorldSettings.RenderedVoxelsInChunk * 6 * 4 / 2, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        indices = new NativeArray<int>(WorldSettings.RenderedVoxelsInChunk * 6 * 6 / 2, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        normals = new NativeArray<float3>(WorldSettings.RenderedVoxelsInChunk * 6 * 4 / 2, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        uvs = new NativeArray<float2>(WorldSettings.RenderedVoxelsInChunk * 6 * 4 / 2, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        colors32 = new NativeArray<Color32>(WorldSettings.RenderedVoxelsInChunk * 6 * 4 / 2, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
     }
     public void Dispose()
     {
@@ -266,15 +282,17 @@ public struct MeshDataStruct
     {
         if (Initialized && mesh != null)
         {
-            mesh.SetVertices(vertices.Reinterpret<Vector3>(), 0, count[0]);
-            mesh.SetIndices(indices, 0, count[1], MeshTopology.Triangles, 0);
-            mesh.SetNormals(normals.Reinterpret<Vector3>(), 0, count[0]);
-            mesh.SetUVs(0, uvs.Reinterpret<Vector2>(), 0, count[0]);
-            mesh.SetColors(colors32, 0, count[0]);
+            mesh.SetVertices(vertices.Reinterpret<Vector3>(), 0, count[0],MeshUpdateFlags.DontRecalculateBounds & MeshUpdateFlags.DontValidateIndices & MeshUpdateFlags.DontNotifyMeshUsers);
+            mesh.SetIndices(indices, 0, count[1], MeshTopology.Triangles, 0, false);
+            mesh.SetNormals(normals.Reinterpret<Vector3>(), 0, count[0], MeshUpdateFlags.DontRecalculateBounds & MeshUpdateFlags.DontValidateIndices & MeshUpdateFlags.DontNotifyMeshUsers);
+            mesh.SetUVs(0, uvs.Reinterpret<Vector2>(), 0, count[0], MeshUpdateFlags.DontRecalculateBounds & MeshUpdateFlags.DontValidateIndices & MeshUpdateFlags.DontNotifyMeshUsers);
+            mesh.SetColors(colors32, 0, count[0], MeshUpdateFlags.DontRecalculateBounds & MeshUpdateFlags.DontValidateIndices & MeshUpdateFlags.DontNotifyMeshUsers);
+            mesh.bounds = WorldSettings.ChunkBounds;
 
-            mesh.RecalculateTangents();
-            mesh.RecalculateBounds();
+            /*
+            mesh.RecalculateTangents(); // this to do
             mesh.Optimize();
+            */
         }
     }
 }
@@ -289,13 +307,15 @@ public struct ChunkMeshJob : IJob
     [ReadOnly]
     public int chunkHeight;
     [ReadOnly]
+    [NativeDisableContainerSafetyRestriction]
     public NativeArray<Voxel> voxels;
     [ReadOnly]
+    [NativeDisableContainerSafetyRestriction]
     public NativeArray<HeightMap> heightMaps;
     #endregion
 
     #region Output
-
+    [NativeDisableContainerSafetyRestriction]
     public MeshDataStruct meshData;
     #endregion
 
@@ -393,12 +413,13 @@ public struct ChunkMeshJob : IJob
         {
             for (int z = 1; z <= chunkWidth; z++)
             {
-                int maxHeight = (int)(ReadWriteStructs.GetSolid(heightMaps[GetMapIndex(x, z)])) - 1;
+                int maxHeight = (int)(RWStructs.GetSolid(heightMaps[GetMapIndex(x, z)])) - 1;
+
 
                 for (int y = maxHeight; y >= 0; y--)
                 {
                     Voxel voxel = voxels[GetVoxelIndex(x, y, z)];
-                    if (ReadWriteStructs.GetVoxelType(voxel) == 0)
+                    if (RWStructs.GetVoxelType(voxel) == 0)
                         continue;
 
                     float3 voxelPos = new float3(x - 1, y, z - 1);
@@ -414,7 +435,7 @@ public struct ChunkMeshJob : IJob
                             if (y == 0 && i == 5) // lowest and bottom face
                                 continue;
                             int faceCheckIndex = GetVoxelIndex(x + (int)face.x, y + (int)face.y, z + (int)face.z);
-                            if (ReadWriteStructs.GetVoxelType(voxels[faceCheckIndex]) != 0)
+                            if (RWStructs.GetVoxelType(voxels[faceCheckIndex]) != 0)
                                 continue;
                         }
                         surrounded = false;
@@ -423,10 +444,7 @@ public struct ChunkMeshJob : IJob
                             meshData.vertices[meshData.count[0] + j] = Vertices[FaceVerticeIndex[i * 4 + j]] + voxelPos;
                             meshData.uvs[meshData.count[0] + j] = VerticeUVs[j];
                             meshData.normals[meshData.count[0] + j] = FaceCheck[i];
-                            //meshData.colors32[meshData.count[0]] = new Color32((byte)x, (byte)y, (byte)z, 255);
-                            //meshData.colors32[meshData.count[0]] = new Color(((float)x) / chunkWidth, ((float)y) / chunkHeight, ((float)z) / chunkWidth, 255f);
-                            float color = ((float)(y) / chunkHeight);
-                            meshData.colors32[meshData.count[0] + j] = new Color(color, 0, 0, 0);
+                            meshData.colors32[meshData.count[0] + j] = new Color32((byte)y, 0, 0, 0);
                         }
                         for(int k = 0; k < 6; k++)
                         {

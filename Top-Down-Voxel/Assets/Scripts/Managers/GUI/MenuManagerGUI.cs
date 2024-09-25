@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEngine;
 
 [Serializable]
-public class MenuManager_GUI : MonoBehaviour
+public class MenuManagerGUI : MonoBehaviour
 {
 
     [Header("Screen")]
