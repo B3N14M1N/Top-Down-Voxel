@@ -8,11 +8,11 @@ using UnityEngine;
 public class ChunksManager : MonoBehaviour
 {
     public const string ChunksManagerLoopString = "ChunksManagerLoop";
-    public bool Culling = false;
+    public Vector3 Center { get; private set; }
+
     private Queue<Chunk> pool = new Queue<Chunk>();
     private Dictionary<Vector3, Chunk> active = new Dictionary<Vector3, Chunk>();
     private Dictionary<Vector3, Chunk> cached = new Dictionary<Vector3, Chunk>();
-    public Vector3 Center { get; private set; }
     private Chunk NewChunk
     {
         get
@@ -37,72 +37,13 @@ public class ChunksManager : MonoBehaviour
         }
     }
 
-    private Vector3 prevCameraPos;
-    private Camera _camera;
     private void Awake()
     {
         for (int i = 0; i < (PlayerSettings.RenderDistance + PlayerSettings.CacheDistance) * (PlayerSettings.RenderDistance + PlayerSettings.CacheDistance); i++)
         {
             pool.Enqueue(NewChunk);
         }
-        _camera = Camera.main;
     }
-    public void LateUpdate()
-    {
-        if (Culling && _camera != null && prevCameraPos != _camera.transform.position)
-        {
-            foreach (var chunk in active.Values)
-            {
-                if (chunk != null && IsChunkVisible(chunk.Renderer, _camera))
-                {
-                    chunk.Render = true;
-                }
-                else
-                {
-                    chunk.Render = false;
-                }
-            }
-        }
-        prevCameraPos = _camera.transform.position;
-    }
-
-    public static bool IsChunkVisible(Renderer renderer, Camera camera)
-    {
-        Plane[] planes = GeometryUtility.CalculateFrustumPlanes(camera);
-
-        Bounds bounds = renderer.bounds;
-        Vector3 size = bounds.size;
-        Vector3 min = bounds.min;
-
-        //Calculate the 8 points on the corners of the bounding box
-        List<Vector3> boundsCorners = new List<Vector3>(8) {
-            min,
-            min + new Vector3(0, 0, size.z),
-            min + new Vector3(size.x, 0, size.z),
-            min + new Vector3(size.x, 0, 0),
-        };
-        for (int i = 0; i < 4; i++)
-            boundsCorners.Add(boundsCorners[i] + size.y * Vector3.up);
-
-        bool visible = false;
-        for (int p = 0; p < planes.Length; p++)
-        {
-            for (int i = 0; i < boundsCorners.Count; i++)
-            {
-                if (planes[p].GetSide(boundsCorners[i]) == false)
-                {
-                    //return false;
-                    //visible = false;
-                }
-                else
-                {
-                    visible = true;
-                }
-            }
-        }
-        return visible;
-    }
-
 
     public void UpdateChunks(Vector3 center)
     {
@@ -188,12 +129,31 @@ public class ChunksManager : MonoBehaviour
         source.TryGetValue(pos, out Chunk chunk);
         return chunk;
     }
+
     public Chunk GetChunk(Vector3 pos)
     {
         Chunk chunk =  GetChunkFromSource(pos, ref active);
         if (chunk == null)
             chunk = GetChunkFromSource(pos, ref cached);
         return chunk;
+    }
+
+    public (int, int, int, int, int) ChunksMeshAndColliderSize()
+    {
+        int meshVertices = 0;
+        int meshIndices = 0;
+        int colliderVertices = 0;
+        int colliderIndices = 0;
+
+        foreach (Chunk chunk in active.Values)
+        {
+            var data = chunk.ChunkMeshAndColliderSize();
+            meshVertices += data.Item1;
+            meshIndices += data.Item2;
+            colliderVertices += data.Item3;
+            colliderIndices += data.Item4;
+        }
+        return (active.Count ,meshVertices, meshIndices, colliderVertices, colliderIndices);
     }
 
 

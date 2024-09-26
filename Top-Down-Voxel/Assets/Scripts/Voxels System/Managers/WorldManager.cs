@@ -5,8 +5,6 @@ using UnityEngine;
 public class WorldManager : MonoBehaviour
 {
     public const string WorldManagerLoopString = "WorldManagerLoop";
-    [Header("World Settings")]
-    public int seed;
 
     [Header("Player")]
     public Transform player;

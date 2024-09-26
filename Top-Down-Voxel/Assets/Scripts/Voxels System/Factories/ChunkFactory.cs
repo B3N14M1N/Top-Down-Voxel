@@ -1,9 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using UnityEngine;
-using UnityEngine.Rendering;
-using UnityEngine.UIElements;
 
 public class ChunkFactory : MonoBehaviour
 {
@@ -13,21 +10,21 @@ public class ChunkFactory : MonoBehaviour
     private float time = 0f;
 
     [Header("Noise Parameters")]
-    public NoiseParametersScriptableObject noiseParameters;
+    [SerializeField] private NoiseParametersScriptableObject noiseParameters;
     private Vector2Int[] octaveOffsets;
 
     [Header("Buffers")]
-    public List<Vector3> chunksToProccess = new List<Vector3>();
+    private List<Vector3> chunksToProccess = new List<Vector3>();
 
-    public List<JobChunkGenerator> chunkJobs = new List<JobChunkGenerator>();
-    public List<JobChunkColliderGenerator> colliderJobs = new List<JobChunkColliderGenerator>();
+    private List<JobChunkGenerator> chunkJobs = new List<JobChunkGenerator>();
+    private List<JobChunkColliderGenerator> colliderJobs = new List<JobChunkColliderGenerator>();
     [Header("Materials")]
-    public List<Material> materials = new List<Material>();
-    public int materialIndex = 0;
+    [SerializeField]private List<Material> materials = new List<Material>();
+    private int materialIndex = 0;
     public Material Material { get { return materials[materialIndex]; } }
-    public bool canChangeMaterial = true;
+    public bool CanChangeMaterial { get; set; }
 
-    public KeyCode MaterialChangeKey = KeyCode.M;
+    [SerializeField] private KeyCode MaterialChangeKey = KeyCode.M;
 
     private static ChunkFactory instance;
     public static ChunkFactory Instance
@@ -53,6 +50,7 @@ public class ChunkFactory : MonoBehaviour
     public void Awake()
     {
         InitSeed();
+        CanChangeMaterial = true;
     }
 
     public void InitSeed()
@@ -76,7 +74,7 @@ public class ChunkFactory : MonoBehaviour
     {
         var UpdateTime = Time.realtimeSinceStartup;
 
-        if (Input.GetKeyUp(MaterialChangeKey) && canChangeMaterial)
+        if (Input.GetKeyUp(MaterialChangeKey) && CanChangeMaterial)
         {
             materialIndex = materialIndex == materials.Count - 1 ? 0 : ++materialIndex;
         }

@@ -148,8 +148,6 @@ public class Chunk
         this.Position = Position;
         CreateInstance();
     }
-    #endregion
-
 
     private void CreateInstance()
     {
@@ -164,8 +162,33 @@ public class Chunk
         chunkInstance.name = $"Chunk Instance [{(int)Position.x}]:[{(int)Position.z}]";
         chunkInstance.transform.position = new Vector3(Position.x, 0, Position.z) * WorldSettings.ChunkWidth;
     }
+    #endregion
 
     #region Mesh & Data & Position
+
+    public (int,int,int,int) ChunkMeshAndColliderSize()
+    {
+        if(chunkInstance == null)
+            return (0, 0, 0, 0);
+        int meshVertices = 0;
+        int meshIndices = 0;
+        int colliderVertices = 0;
+        int colliderIndices = 0;
+
+        if(meshFilter != null && meshFilter.sharedMesh != null)
+        {
+            meshVertices = meshFilter.sharedMesh.vertexCount;
+            meshIndices = meshFilter.sharedMesh.triangles.Length;
+        }
+
+        if (meshCollider != null && meshCollider.sharedMesh != null)
+        {
+            colliderVertices = meshCollider.sharedMesh.vertexCount;
+            colliderIndices = meshCollider.sharedMesh.triangles.Length;
+        }
+        return (meshVertices, meshIndices, colliderVertices, colliderIndices);
+    }
+
     public void UpdateChunk(Vector3 Position)
     {
         this.Position = Position;
@@ -174,6 +197,7 @@ public class Chunk
         chunkInstance.name = $"Chunk Instance [{(int)Position.x}]:[{(int)Position.z}]";
         chunkInstance.transform.position = new Vector3(Position.x, 0, Position.z) * WorldSettings.ChunkWidth;
     }
+
     public void UploadMesh(ref Mesh mesh)
     {
         if (chunkInstance != null)
@@ -200,6 +224,7 @@ public class Chunk
 
         }
     }
+
     public void UpdateCollider(ref Mesh mesh)
     {
         if (meshCollider == null)
@@ -213,6 +238,7 @@ public class Chunk
             meshCollider.sharedMesh = mesh;
         }
     }
+
     public void UploadData(ref NativeArray<Voxel> voxels, ref NativeArray<HeightMap> heightMap)
     {
         if (this.voxels.IsCreated) this.voxels.Dispose();
