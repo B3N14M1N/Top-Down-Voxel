@@ -1,11 +1,15 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.UIElements;
 
 public class ChunkFactory : MonoBehaviour
 {
     #region Fields
     public const string ChunkMeshCreationString = "ChunkMeshCreationString";
+    public const string ChunkFactoryLoopString = "ChunkFactoryLoop";
     private float time = 0f;
 
     [Header("Noise Parameters")]
@@ -13,10 +17,10 @@ public class ChunkFactory : MonoBehaviour
     private Vector2Int[] octaveOffsets;
 
     [Header("Buffers")]
-    public List<Chunk> chunksToProccess = new List<Chunk>();
+    public List<Vector3> chunksToProccess = new List<Vector3>();
 
-    public List<JobChunkGenerator> jobs = new List<JobChunkGenerator>();
-    public List<JobChunkColliderGenerator> priorityJobs = new List<JobChunkColliderGenerator>();
+    public List<JobChunkGenerator> chunkJobs = new List<JobChunkGenerator>();
+    public List<JobChunkColliderGenerator> colliderJobs = new List<JobChunkColliderGenerator>();
     [Header("Materials")]
     public List<Material> materials = new List<Material>();
     public int materialIndex = 0;
@@ -70,108 +74,111 @@ public class ChunkFactory : MonoBehaviour
 
     void Update()
     {
+        var UpdateTime = Time.realtimeSinceStartup;
+
         if (Input.GetKeyUp(MaterialChangeKey) && canChangeMaterial)
         {
             materialIndex = materialIndex == materials.Count - 1 ? 0 : ++materialIndex;
         }
 
         int loaded = 0;
-        for (int i = 0; i < jobs.Count; i++)
+        for (int i = 0; i < chunkJobs.Count; i++)
         {
-            if (jobs[i] != null)
+            if (chunkJobs[i] != null)
             {
                 var timeNow = Time.realtimeSinceStartup;
-                if (jobs[i].CompleteDataGeneration())
+                if (chunkJobs[i].CompleteDataGeneration())
                 {
-                    priorityJobs.Add(new JobChunkColliderGenerator(jobs[i].heightMaps.AsReadOnly(), jobs[i].chunkPos));
-                    jobs[i].ScheduleMeshGeneration();
+                    colliderJobs.Add(new JobChunkColliderGenerator(chunkJobs[i].heightMaps.AsReadOnly(), chunkJobs[i].chunkPos));
+                    chunkJobs[i].ScheduleMeshGeneration();
                 }
                 else
-                if (jobs[i].CompleteMeshGeneration())
+                if (chunkJobs[i].CompleteMeshGeneration())
                 {
-                    Chunk chunk = ChunksManager.Instance.GetChunk(jobs[i].chunkPos);
+                    Chunk chunk = ChunksManager.Instance.GetChunk(chunkJobs[i].chunkPos);
                     if (chunk != null)
                     {
-                        chunk.UploadData(ref jobs[i].voxels, ref jobs[i].heightMaps);
+                        chunk.UploadData(ref chunkJobs[i].voxels, ref chunkJobs[i].heightMaps);
                         Mesh mesh = new Mesh() { indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
-                        jobs[i].SetMesh(ref mesh);
-                        if (mesh != null)
-                        {
-                            chunk.UploadMesh(ref mesh);
-                        }
+                        chunkJobs[i].SetMesh(ref mesh);
+                        chunk.UploadMesh(ref mesh);
                     }
-                    jobs[i].Dispose();
-                    jobs.RemoveAt(i);
+                    chunkJobs[i].Dispose();
+                    chunkJobs.RemoveAt(i);
                     i--;
                     loaded++;
-                    AvgCounter.UpdateTimer(ChunkMeshCreationString, (Time.realtimeSinceStartup - timeNow) * 1000f);
+                    AvgCounter.UpdateCounter(ChunkMeshCreationString, (Time.realtimeSinceStartup - timeNow) * 1000f);
 
                     if (loaded >= PlayerSettings.ChunksToLoad)
                         break;
                 }
             }
         }
-        for (int i = 0; i < priorityJobs.Count; i++)
+        for (int i = 0; i < colliderJobs.Count; i++)
         {
-            if(priorityJobs[i] != null && priorityJobs[i].CompletedGeneration())
+            if(colliderJobs[i] != null && colliderJobs[i].CompletedGeneration())
             {
-                Chunk chunk = ChunksManager.Instance.GetChunk(priorityJobs[i].chunkPos);
+                Chunk chunk = ChunksManager.Instance.GetChunk(colliderJobs[i].chunkPos);
                 if (chunk != null)
                 {
                     Mesh mesh = new Mesh() { indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
-                    priorityJobs[i].SetCollider(ref mesh);
-                    if (mesh != null)
-                    {
-                        chunk.UpdateCollider(ref mesh);
-                    }
-                    priorityJobs[i].Dispose();
-                    priorityJobs.RemoveAt(i);
-                    i--;
+                    colliderJobs[i].SetCollider(ref mesh);
+                    chunk.UpdateCollider(ref mesh);
                 }
+                colliderJobs[i].Dispose();
+                colliderJobs.RemoveAt(i);
+                i--;
             }
         }
         time += Time.deltaTime;
         if (time >= PlayerSettings.TimeToLoadNextChunks)
         {
-            //sort chunks to generate the closest first
-            chunksToProccess = (from chunk
-                                in chunksToProccess
-                                where WorldSettings.ChunksInRange(ChunksManager.Instance.Center, chunk.Position, PlayerSettings.LoadDistance)
-                                orderby WorldSettings.ChunkRangeMagnitude(ChunksManager.Instance.Center, chunk.Position) ascending
-                                select chunk).ToList();
-
             for (int i = 0; i < chunksToProccess.Count && JobChunkGenerator.Processed < PlayerSettings.ChunksProcessed; i++)
             {
                 if (chunksToProccess[i] != null)
                 {
-                    jobs.Add(new JobChunkGenerator(chunksToProccess[i].Position, noiseParameters.noise.ToArray(), octaveOffsets.ToArray(), noiseParameters.globalScale));
+                    chunkJobs.Add(new JobChunkGenerator(chunksToProccess[i], noiseParameters.noise.ToArray(), octaveOffsets.ToArray(), noiseParameters.globalScale));
                     chunksToProccess.RemoveAt(i);
                     i--;
                 }
             }
             time = 0f;
         }
+        AvgCounter.UpdateCounter(ChunkFactoryLoopString, (Time.realtimeSinceStartup - UpdateTime) * 1000f);
     }
 
-    public void GenerateChunkData(Chunk chunk)
+    public void GenerateChunkData(Vector3 position)
     {
-        chunksToProccess.Add(chunk);
+        chunksToProccess.Add(position);
+    }
+    public void GenerateChunksData(List<Vector3> positions) 
+    {
+        chunksToProccess.AddRange(positions);
+        SortChunksToGenerate();
+    }
+
+    private void SortChunksToGenerate()
+    {
+        //sort chunks to generate the closest first ~0.4ms
+        chunksToProccess = (from pos
+                            in chunksToProccess
+                            where WorldSettings.ChunksInRange(ChunksManager.Instance.Center, pos, PlayerSettings.RenderDistance + PlayerSettings.CacheDistance)
+                            orderby WorldSettings.ChunkRangeMagnitude(ChunksManager.Instance.Center, pos) ascending
+                            select pos).ToList();
     }
 
     public void Dispose()
     {
-        for (int i = 0; i < priorityJobs.Count; i++)
+        for (int i = 0; i < colliderJobs.Count; i++)
         {
-            priorityJobs[i].Dispose();
-            priorityJobs[i] = null;
-            priorityJobs.RemoveAt(i);
+            colliderJobs[i].Dispose();
+            colliderJobs.RemoveAt(i);
             i--;
         }
-        for (int i = 0; i < jobs.Count; i++)
+        for (int i = 0; i < chunkJobs.Count; i++)
         {
-            jobs[i].Dispose(disposeData: true);
-            jobs[i] = null;
-            jobs.RemoveAt(i);
+            chunkJobs[i].Dispose(disposeData: true);
+            chunkJobs.RemoveAt(i);
             i--;
         }
     }

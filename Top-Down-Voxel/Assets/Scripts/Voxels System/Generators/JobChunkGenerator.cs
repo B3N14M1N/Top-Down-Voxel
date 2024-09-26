@@ -40,8 +40,20 @@ public class JobChunkGenerator
         ScheduleDataGeneration();
         Processed += 1;
     }
+    public JobChunkGenerator(Vector3 chunkPos, NativeArray<Voxel> voxels, NativeArray<HeightMap> heightMaps)
+    {
+        this.chunkPos = chunkPos;
+        GenerationStarted = true;
 
-    public bool IsComplete => GenerationStarted && DataGenerated && MeshGenerated;
+        DataScheduled = false;
+        DataGenerated = true;
+
+        MeshScheduled = false;
+        MeshGenerated = false;
+        Processed += 1;
+        ScheduleMeshGeneration();
+        Processed += 1;
+    }
 
     public void ScheduleDataGeneration()
     {

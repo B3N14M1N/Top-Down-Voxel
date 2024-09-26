@@ -7,6 +7,7 @@ using UnityEngine;
 
 public class ChunksManager : MonoBehaviour
 {
+    public const string ChunksManagerLoopString = "ChunksManagerLoop";
     public bool Culling = false;
     private Queue<Chunk> pool = new Queue<Chunk>();
     private Dictionary<Vector3, Chunk> active = new Dictionary<Vector3, Chunk>();
@@ -40,7 +41,7 @@ public class ChunksManager : MonoBehaviour
     private Camera _camera;
     private void Awake()
     {
-        for (int i = 0; i < PlayerSettings.LoadDistance * PlayerSettings.LoadDistance; i++)
+        for (int i = 0; i < (PlayerSettings.RenderDistance + PlayerSettings.CacheDistance) * (PlayerSettings.RenderDistance + PlayerSettings.CacheDistance); i++)
         {
             pool.Enqueue(NewChunk);
         }
@@ -105,10 +106,12 @@ public class ChunksManager : MonoBehaviour
 
     public void UpdateChunks(Vector3 center)
     {
+        var UpdateTime = Time.realtimeSinceStartup;
+        Center = center;
         cached.AddRange(active);
         active.Clear();
 
-        var chunksToGenerate = new List<Chunk>();
+        var chunksToGenerate = new List<Vector3>();
 
         for (int x = (int)center.x - PlayerSettings.RenderDistance; x <= (int)center.x + PlayerSettings.RenderDistance; x++)
         {
@@ -126,20 +129,17 @@ public class ChunksManager : MonoBehaviour
 
                 chunk = GetPooledChunk();
                 chunk.UpdateChunk(key); 
-                chunksToGenerate.Add(chunk);
+                chunksToGenerate.Add(key);
                 chunk.Active = true;
                 chunk.Render = true;
                 active.Add(key, chunk);
             }
         }
-        //chunksToGenerate = (from chunk in chunksToGenerate orderby WorldSettings.ChunkRangeMagnitude(Center, chunk.Position) ascending select chunk).ToList();
-        foreach (var chunk in chunksToGenerate)
-        {
-            ChunkFactory.Instance.GenerateChunkData(chunk);
-        }
+
+        ChunkFactory.Instance.GenerateChunksData(chunksToGenerate);
 
         List<Vector3> removals = (from key in cached.Keys
-                                  where WorldSettings.ChunksInRange(center, key, PlayerSettings.LoadDistance) == false
+                                  where !WorldSettings.ChunksInRange(center, key, PlayerSettings.RenderDistance + PlayerSettings.CacheDistance)
                                   select key).ToList();
         foreach (var key in removals)
         {
@@ -151,7 +151,7 @@ public class ChunksManager : MonoBehaviour
             cached[key].Active = false;
         }
 
-        Center = center;
+        AvgCounter.UpdateCounter(ChunksManagerLoopString, (Time.realtimeSinceStartup - UpdateTime) * 1000f);
     }
 
     public void ClearChunkAndEnqueue(Vector3 pos, ref Dictionary<Vector3, Chunk> source)
@@ -159,7 +159,13 @@ public class ChunksManager : MonoBehaviour
         if (source.TryGetValue(pos, out Chunk chunk))
         {
             chunk.ClearChunk();
-            pool.Enqueue(chunk);
+            var size = PlayerSettings.CacheDistance + PlayerSettings.RenderDistance;
+            size *= size;
+            size -= PlayerSettings.RenderDistance * PlayerSettings.RenderDistance; 
+            if (pool.Count < size)
+                pool.Enqueue(chunk);
+            else
+                chunk.Dispose();
             source.Remove(pos);
         }
     }
@@ -184,9 +190,9 @@ public class ChunksManager : MonoBehaviour
     }
     public Chunk GetChunk(Vector3 pos)
     {
-        Chunk chunk = GetChunkFromSource(pos, ref cached);
+        Chunk chunk =  GetChunkFromSource(pos, ref active);
         if (chunk == null)
-            chunk = GetChunkFromSource(pos, ref active);
+            chunk = GetChunkFromSource(pos, ref cached);
         return chunk;
     }
 

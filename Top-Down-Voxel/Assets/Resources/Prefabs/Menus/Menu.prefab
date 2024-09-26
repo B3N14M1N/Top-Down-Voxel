@@ -8146,7 +8146,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3541574155735977128}
   m_Layer: 5
-  m_Name: 'Field (1): Load Distance'
+  m_Name: 'Field (1): Cache Distance'
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9757,7 +9757,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Load distance:'
+  m_text: 'Cache distance:'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -10801,7 +10801,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   InputRenderDistance: {fileID: 1436104335415730128}
-  InputLoadDistance: {fileID: 2262911806089885193}
+  InputCacheDistance: {fileID: 2262911806089885193}
   InputChunksProcessed: {fileID: 3687251741213215533}
   InputChunksToLoad: {fileID: 7637690118349134165}
   InputTimeToLoadNextChunks: {fileID: 3580024235895344317}

@@ -2,37 +2,19 @@ using System.Collections.Generic;
 
 public static class AvgCounter
 {
-    private class Counter
-    {
-        public float Time;
-        public int Count;
-
-        public Counter() 
-        { 
-            Time = 0;
-            Count = 0;
-        }
-
-        public Counter(float time, int count)
-        {
-            Time = time;
-            Count = count;
-        }
-    }
 
     private static Dictionary<string, Counter> kvp = new Dictionary<string, Counter>();
 
-    public static void AddTimer(string name)
+    public static void AddCounter(string name)
     {
         kvp.TryAdd(name, new Counter());
     }
 
-    public static void UpdateTimer(string name, float time)
+    public static void UpdateCounter(string name, float time)
     {
         if (kvp.TryGetValue(name, out Counter counter))
         {
-            counter.Time += time;
-            counter.Count++;
+            counter.Add(time);
         }
         else
         {
@@ -40,22 +22,56 @@ public static class AvgCounter
         }
     }
 
-    public static float GetTimer(string name)
+    public static Counter GetCounter(string name)
     {
-        if (kvp.TryGetValue(name, out Counter counter))
-        {
-            return counter.Time / counter.Count;
-        }
-        return 0;
+        kvp.TryGetValue(name, out Counter counter);
+        return counter;
     }
 
-    /// <summary>
-    /// Removes the timer if it exists
-    /// </summary>
-    /// <param name="name"></param>
-    public static void RemoveTimer(string name)
+    public static void RemoveCounter(string name)
     {
         kvp.Remove(name);
     }
+}
+public class Counter
+{
+    public float Time, MinTime, MaxTime;
+    private float TotalTime;
+    private int Count;
+    public float AVG 
+    {  
+        get
+        {
+            if(Count == 0)
+                return 0;
+            return TotalTime / Count;
+        }
+    }
 
+    public Counter()
+    {
+        TotalTime = 0;
+        Count = 0;
+    }
+
+    public void Add(float value)
+    {
+        Time = value;
+        if(TotalTime > float.MaxValue - value || Count == int.MaxValue - 1)
+        {
+            TotalTime /= 2f;
+            Count /= 2;
+        }
+        TotalTime += value;
+        if (Count == 0)
+        {
+            MinTime = TotalTime;
+            MaxTime = TotalTime;
+        }
+        if (MinTime > value)
+            MinTime = value;
+        if (MaxTime < value)
+            MaxTime = value;
+        Count++;
+    }
 }

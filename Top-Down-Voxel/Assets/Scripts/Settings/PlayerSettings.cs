@@ -1,7 +1,7 @@
 public static class PlayerSettings
 {
     public static int RenderDistance = 20;
-    public static int LoadDistance = 25;
+    public static int CacheDistance = 5;
 
     // limits how many chunks to generate - it dilutes the workload and uses less memory per frame
     public static int ChunksProcessed = 2;

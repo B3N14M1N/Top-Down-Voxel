@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class WorldManager : MonoBehaviour
 {
+    public const string WorldManagerLoopString = "WorldManagerLoop";
     [Header("World Settings")]
     public int seed;
 
@@ -21,11 +22,13 @@ public class WorldManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        var UpdateTime = Time.realtimeSinceStartup;
         playerChunkPosition = WorldSettings.ChunkPositionFromPosition(player.transform.position);
         if (ChunksManager.Instance.Center != playerChunkPosition)
         {
             ChunksManager.Instance.UpdateChunks(playerChunkPosition);
         }
+        AvgCounter.UpdateCounter(WorldManagerLoopString, (Time.realtimeSinceStartup - UpdateTime) * 1000f);
     }
 
     private void OnApplicationQuit()
