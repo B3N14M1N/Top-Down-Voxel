@@ -79,9 +79,11 @@ public class ChunksManager : MonoBehaviour
 
         ChunkFactory.Instance.GenerateChunksData(chunksToGenerate);
 
+        // ~0.02 ms 20Chunks, ~0.06ms 50Chunks
         List<Vector3> removals = (from key in cached.Keys
                                   where !WorldSettings.ChunksInRange(center, key, PlayerSettings.RenderDistance + PlayerSettings.CacheDistance)
                                   select key).ToList();
+        
         foreach (var key in removals)
         {
             ClearChunkAndEnqueue(key, ref cached);
@@ -138,21 +140,22 @@ public class ChunksManager : MonoBehaviour
         return chunk;
     }
 
+    private int meshVertices = 0;
+    private int meshIndices = 0;
+    private int colliderVertices = 0;
+    private int colliderIndices = 0;
+    public void UpdateChunkMeshSize(int mV, int mI)
+    {
+        meshVertices += mV;
+        meshIndices += mI;
+    }
+    public void UpdateChunkColliderSize(int cV, int cI)
+    {
+        colliderVertices += cV;
+        colliderIndices += cI;
+    }
     public (int, int, int, int, int) ChunksMeshAndColliderSize()
     {
-        int meshVertices = 0;
-        int meshIndices = 0;
-        int colliderVertices = 0;
-        int colliderIndices = 0;
-
-        foreach (Chunk chunk in active.Values)
-        {
-            var data = chunk.ChunkMeshAndColliderSize();
-            meshVertices += data.Item1;
-            meshIndices += data.Item2;
-            colliderVertices += data.Item3;
-            colliderIndices += data.Item4;
-        }
         return (active.Count ,meshVertices, meshIndices, colliderVertices, colliderIndices);
     }
 

@@ -251,15 +251,6 @@ public struct MeshDataStruct
     [NativeDisableParallelForRestriction]
     [NativeDisableContainerSafetyRestriction]
     public NativeArray<int> indices;
-    [NativeDisableParallelForRestriction]
-    [NativeDisableContainerSafetyRestriction]
-    public NativeArray<float3> normals;
-    [NativeDisableParallelForRestriction]
-    [NativeDisableContainerSafetyRestriction]
-    public NativeArray<float2> uvs;
-    [NativeDisableParallelForRestriction]
-    [NativeDisableContainerSafetyRestriction]
-    public NativeArray<Color32> colors32;
 
     [NativeDisableParallelForRestriction]
     [NativeDisableContainerSafetyRestriction]
@@ -275,18 +266,12 @@ public struct MeshDataStruct
         //divide by 2 -> cant be more vertices & faces than half of the voxels.
         vertices = new NativeArray<float3>(WorldSettings.RenderedVoxelsInChunk * 6 * 4 / 2, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         indices = new NativeArray<int>(WorldSettings.RenderedVoxelsInChunk * 6 * 6 / 2, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-        normals = new NativeArray<float3>(WorldSettings.RenderedVoxelsInChunk * 6 * 4 / 2, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-        uvs = new NativeArray<float2>(WorldSettings.RenderedVoxelsInChunk * 6 * 4 / 2, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-        colors32 = new NativeArray<Color32>(WorldSettings.RenderedVoxelsInChunk * 6 * 4 / 2, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
     }
     public void Dispose()
     {
         Initialized = false;
         if (vertices.IsCreated) vertices.Dispose();
         if (indices.IsCreated) indices.Dispose();
-        if (normals.IsCreated) normals.Dispose();
-        if (uvs.IsCreated) uvs.Dispose();
-        if (colors32.IsCreated) colors32.Dispose();
         if (count.IsCreated) count.Dispose();
     }
 
@@ -296,15 +281,7 @@ public struct MeshDataStruct
         {
             mesh.SetVertices(vertices.Reinterpret<Vector3>(), 0, count[0], MeshUpdateFlags.DontRecalculateBounds & MeshUpdateFlags.DontValidateIndices & MeshUpdateFlags.DontNotifyMeshUsers);
             mesh.SetIndices(indices, 0, count[1], MeshTopology.Triangles, 0, false);
-            mesh.SetNormals(normals.Reinterpret<Vector3>(), 0, count[0], MeshUpdateFlags.DontRecalculateBounds & MeshUpdateFlags.DontValidateIndices & MeshUpdateFlags.DontNotifyMeshUsers);
-            mesh.SetUVs(0, uvs.Reinterpret<Vector2>(), 0, count[0], MeshUpdateFlags.DontRecalculateBounds & MeshUpdateFlags.DontValidateIndices & MeshUpdateFlags.DontNotifyMeshUsers);
-            mesh.SetColors(colors32, 0, count[0], MeshUpdateFlags.DontRecalculateBounds & MeshUpdateFlags.DontValidateIndices & MeshUpdateFlags.DontNotifyMeshUsers);
             mesh.bounds = WorldSettings.ChunkBounds;
-
-            /*
-            mesh.RecalculateTangents(); // this to do
-            mesh.Optimize();
-            */
         }
     }
 }
@@ -345,6 +322,21 @@ public struct ChunkMeshJob : IJob
     #endregion
 
     #region Execution
+    public float3 PackData(float3 position, int normalIndex, int uvIndex, int id)
+    {
+        int x = uvIndex;
+        x <<= 3;
+        x += normalIndex;
+        x <<= 8;
+        x += (byte)position.z;
+        x <<= 8;
+        x += (byte)position.y;
+        x <<= 8;
+        x += (byte)position.x;
+        //int y = 0;
+        int z = 0;
+        return new float3(BitConverter.Int32BitsToSingle(x), BitConverter.Int32BitsToSingle(id), BitConverter.Int32BitsToSingle(z));
+    }
 
     public void Execute()
     {
@@ -453,10 +445,7 @@ public struct ChunkMeshJob : IJob
                         surrounded = false;
                         for (int j = 0; j < 4; j++)
                         {
-                            meshData.vertices[meshData.count[0] + j] = Vertices[FaceVerticeIndex[i * 4 + j]] + voxelPos;
-                            meshData.uvs[meshData.count[0] + j] = VerticeUVs[j];
-                            meshData.normals[meshData.count[0] + j] = FaceCheck[i];
-                            meshData.colors32[meshData.count[0] + j] = new Color32((byte)y, 0, 0, 0);
+                            meshData.vertices[meshData.count[0] + j] = PackData(Vertices[FaceVerticeIndex[i * 4 + j]] + voxelPos, i, j, y);
                         }
                         for (int k = 0; k < 6; k++)
                         {

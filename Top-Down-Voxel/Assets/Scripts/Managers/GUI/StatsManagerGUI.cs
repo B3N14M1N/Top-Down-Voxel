@@ -27,7 +27,7 @@ public class StatsManagerGUI : MonoBehaviour
     [SerializeField] private WorldManager worldManager;
 
     private float updateInterval = 1.0f;
-    private float lastInterval; // Last interval end time
+    private float lastInterval; // Last interval end Time
     private float frames = 0; // Frames over current interval
 
     private float framesavtick = 0;

@@ -129,11 +129,11 @@ public class ChunkFactory : MonoBehaviour
             }
         }
         time += Time.deltaTime;
-        if (time >= PlayerSettings.TimeToLoadNextChunks)
+        if (time >= PlayerSettings.TimeToLoadNextChunks || JobChunkGenerator.Processed == 0)
         {
-            for (int i = 0; i < chunksToProccess.Count && JobChunkGenerator.Processed < PlayerSettings.ChunksProcessed; i++)
+            if (chunksToProccess != null)
             {
-                if (chunksToProccess[i] != null)
+                for (int i = 0; i < chunksToProccess.Count && JobChunkGenerator.Processed < PlayerSettings.ChunksProcessed; i++)
                 {
                     chunkJobs.Add(new JobChunkGenerator(chunksToProccess[i], noiseParameters.noise.ToArray(), octaveOffsets.ToArray(), noiseParameters.globalScale));
                     chunksToProccess.RemoveAt(i);
@@ -145,11 +145,7 @@ public class ChunkFactory : MonoBehaviour
         AvgCounter.UpdateCounter(ChunkFactoryLoopString, (Time.realtimeSinceStartup - UpdateTime) * 1000f);
     }
 
-    public void GenerateChunkData(Vector3 position)
-    {
-        chunksToProccess.Add(position);
-    }
-    public void GenerateChunksData(List<Vector3> positions) 
+    public void GenerateChunksData(List<Vector3> positions)
     {
         chunksToProccess.AddRange(positions);
         SortChunksToGenerate();
@@ -157,12 +153,14 @@ public class ChunkFactory : MonoBehaviour
 
     private void SortChunksToGenerate()
     {
+        var time = Time.realtimeSinceStartup;
         //sort chunks to generate the closest first ~0.4ms
         chunksToProccess = (from pos
                             in chunksToProccess
                             where WorldSettings.ChunksInRange(ChunksManager.Instance.Center, pos, PlayerSettings.RenderDistance + PlayerSettings.CacheDistance)
                             orderby WorldSettings.ChunkRangeMagnitude(ChunksManager.Instance.Center, pos) ascending
                             select pos).ToList();
+        Debug.Log((Time.realtimeSinceStartup - time) * 1000f);
     }
 
     public void Dispose()
