@@ -4,7 +4,7 @@ public static class WorldSettings
 {
     public static int Seed = 0;
 
-    public static int ChunkWidth = 16;
+    public static int ChunkWidth = 32;
 
     public static int ChunkHeight = 255;
 

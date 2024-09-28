@@ -76,8 +76,8 @@ public class ChunksManager : MonoBehaviour
                 active.Add(key, chunk);
             }
         }
-
-        ChunkFactory.Instance.GenerateChunksData(chunksToGenerate);
+        if(chunksToGenerate.Count > 0)
+            ChunkFactory.Instance.GenerateChunksData(chunksToGenerate);
 
         // ~0.02 ms 20Chunks, ~0.06ms 50Chunks
         List<Vector3> removals = (from key in cached.Keys

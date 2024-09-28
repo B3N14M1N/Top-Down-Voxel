@@ -7,15 +7,15 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Shader Graphs_Vertex Color Shader
-  m_Shader: {fileID: -6465566751694194690, guid: cba46310f0e026d4a99c325ff70515a3,
+  m_Name: Chunk Texture
+  m_Shader: {fileID: -6465566751694194690, guid: 08a57af6f02973444b3a9dfa35643180,
     type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 2
-  m_EnableInstancingVariants: 1
+  m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
   stringTagMap: {}
@@ -24,6 +24,10 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _Texture2D:
+        m_Texture: {fileID: 10309, guid: 0000000000000000f000000000000000, type: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -38,14 +42,14 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Ambient_Occulusion: 1
-    - _Metallic: 0.1
+    - _Ambient_Occulusion: 0.425
+    - _Metallic: 0.625
     - _QueueControl: 0
     - _QueueOffset: 0
     - _Smoothness: 0.5
     m_Colors: []
   m_BuildTextureStacks: []
---- !u!114 &9018611145609534243
+--- !u!114 &920021495521389424
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}

@@ -669,9 +669,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   noiseParameters: {fileID: 11400000, guid: 013ccff6bf6ab2a4a85add3323b41d39, type: 2}
   materials:
+  - {fileID: 2100000, guid: 803be1c311d0fc548ba75b7dd47ada71, type: 2}
   - {fileID: 2100000, guid: 7d84f9b6cb289c443b1f9c05c59d0be2, type: 2}
-  - {fileID: 2100000, guid: 74b12fca19c64be419a5cfd640ece249, type: 2}
-  - {fileID: 15303, guid: 0000000000000000f000000000000000, type: 0}
   MaterialChangeKey: 109
 --- !u!114 &669034329
 MonoBehaviour:

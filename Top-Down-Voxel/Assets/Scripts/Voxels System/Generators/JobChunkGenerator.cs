@@ -282,6 +282,7 @@ public struct MeshDataStruct
             mesh.SetVertices(vertices.Reinterpret<Vector3>(), 0, count[0], MeshUpdateFlags.DontRecalculateBounds & MeshUpdateFlags.DontValidateIndices & MeshUpdateFlags.DontNotifyMeshUsers);
             mesh.SetIndices(indices, 0, count[1], MeshTopology.Triangles, 0, false);
             mesh.bounds = WorldSettings.ChunkBounds;
+            //mesh.RecalculateTangents();
         }
     }
 }
@@ -325,17 +326,19 @@ public struct ChunkMeshJob : IJob
     public float3 PackData(float3 position, int normalIndex, int uvIndex, int id)
     {
         int x = uvIndex;
-        x <<= 3;
-        x += normalIndex;
+        x <<= 4;
+        x += (byte)normalIndex;
         x <<= 8;
         x += (byte)position.z;
         x <<= 8;
         x += (byte)position.y;
         x <<= 8;
         x += (byte)position.x;
-        //int y = 0;
-        int z = 0;
-        return new float3(BitConverter.Int32BitsToSingle(x), BitConverter.Int32BitsToSingle(id), BitConverter.Int32BitsToSingle(z));
+        float y = (float)id/(chunkHeight + 1);
+        float z = normalIndex;
+        return new float3(BitConverter.Int32BitsToSingle(x),
+            y,//BitConverter.Int32BitsToSingle(y),
+            z);
     }
 
     public void Execute()

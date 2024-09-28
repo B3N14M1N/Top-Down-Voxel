@@ -19,7 +19,13 @@ public class DisplaySettings : MonoBehaviour, ISettings
         Slider.onValueChanged.AddListener(delegate { SliderValueChangeCheck(); });
         InputMaxFPS.onSubmit.AddListener(delegate { InputFPSValueChangeCheck(); });
     }
-
+    public void Start()
+    {
+        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = maxFps;
+        InputMaxFPS.text = maxFps.ToString();
+        Slider.value = maxFps;
+    }
     public void OnEnable()
     {
         Load();

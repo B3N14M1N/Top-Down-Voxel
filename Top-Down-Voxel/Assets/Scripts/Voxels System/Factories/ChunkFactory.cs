@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Collections;
 using UnityEngine;
 
 public class ChunkFactory : MonoBehaviour
@@ -136,6 +137,7 @@ public class ChunkFactory : MonoBehaviour
                 for (int i = 0; i < chunksToProccess.Count && JobChunkGenerator.Processed < PlayerSettings.ChunksProcessed; i++)
                 {
                     chunkJobs.Add(new JobChunkGenerator(chunksToProccess[i], noiseParameters.noise.ToArray(), octaveOffsets.ToArray(), noiseParameters.globalScale));
+                    
                     chunksToProccess.RemoveAt(i);
                     i--;
                 }
@@ -147,20 +149,20 @@ public class ChunkFactory : MonoBehaviour
 
     public void GenerateChunksData(List<Vector3> positions)
     {
-        chunksToProccess.AddRange(positions);
-        SortChunksToGenerate();
+        //var time = Time.realtimeSinceStartup;
+        chunksToProccess = SortClosest(chunksToProccess);
+        chunksToProccess.AddRange(SortClosest(positions));
+        //Debug.Log((Time.realtimeSinceStartup - time) * 1000f);
     }
 
-    private void SortChunksToGenerate()
+    private List<Vector3> SortClosest(List<Vector3> list)
     {
-        var time = Time.realtimeSinceStartup;
         //sort chunks to generate the closest first ~0.4ms
-        chunksToProccess = (from pos
-                            in chunksToProccess
-                            where WorldSettings.ChunksInRange(ChunksManager.Instance.Center, pos, PlayerSettings.RenderDistance + PlayerSettings.CacheDistance)
-                            orderby WorldSettings.ChunkRangeMagnitude(ChunksManager.Instance.Center, pos) ascending
-                            select pos).ToList();
-        Debug.Log((Time.realtimeSinceStartup - time) * 1000f);
+        return (from pos
+                in list
+                where WorldSettings.ChunksInRange(ChunksManager.Instance.Center, pos, PlayerSettings.RenderDistance + PlayerSettings.CacheDistance)
+                orderby WorldSettings.ChunkRangeMagnitude(ChunksManager.Instance.Center, pos) ascending
+                select pos).ToList();
     }
 
     public void Dispose()
