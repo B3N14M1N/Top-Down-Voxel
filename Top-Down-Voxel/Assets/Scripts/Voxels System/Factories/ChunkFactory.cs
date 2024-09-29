@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Collections;
 using UnityEngine;
 
 public class ChunkFactory : MonoBehaviour
@@ -101,6 +100,7 @@ public class ChunkFactory : MonoBehaviour
                         Mesh mesh = new Mesh() { indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
                         chunkJobs[i].SetMesh(ref mesh);
                         chunk.UploadMesh(ref mesh);
+                        ChunksManager.Instance.CompleteGeneratingChunk(chunk.Position);
                     }
                     chunkJobs[i].Dispose();
                     chunkJobs.RemoveAt(i);
@@ -137,7 +137,7 @@ public class ChunkFactory : MonoBehaviour
                 for (int i = 0; i < chunksToProccess.Count && JobChunkGenerator.Processed < PlayerSettings.ChunksProcessed; i++)
                 {
                     chunkJobs.Add(new JobChunkGenerator(chunksToProccess[i], noiseParameters.noise.ToArray(), octaveOffsets.ToArray(), noiseParameters.globalScale));
-                    
+                    ChunksManager.Instance.SetChunkToGenerate(chunksToProccess[i]);
                     chunksToProccess.RemoveAt(i);
                     i--;
                 }
@@ -150,8 +150,9 @@ public class ChunkFactory : MonoBehaviour
     public void GenerateChunksData(List<Vector3> positions)
     {
         //var time = Time.realtimeSinceStartup;
-        chunksToProccess = SortClosest(chunksToProccess);
-        chunksToProccess.AddRange(SortClosest(positions));
+        chunksToProccess = positions;
+        //chunksToProccess = SortClosest(chunksToProccess);
+        //chunksToProccess.AddRange(SortClosest(positions));
         //Debug.Log((Time.realtimeSinceStartup - time) * 1000f);
     }
 

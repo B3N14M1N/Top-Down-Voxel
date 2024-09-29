@@ -42,11 +42,11 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Ambient_Occulusion: 0.425
+    - _Ambient_Occulusion: 1
     - _Metallic: 0.625
     - _QueueControl: 0
     - _QueueOffset: 0
-    - _Smoothness: 0.5
+    - _Smoothness: 0.3
     m_Colors: []
   m_BuildTextureStacks: []
 --- !u!114 &920021495521389424

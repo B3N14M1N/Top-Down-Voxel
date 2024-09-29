@@ -13,6 +13,9 @@ public class ChunksManager : MonoBehaviour
     private Queue<Chunk> pool = new Queue<Chunk>();
     private Dictionary<Vector3, Chunk> active = new Dictionary<Vector3, Chunk>();
     private Dictionary<Vector3, Chunk> cached = new Dictionary<Vector3, Chunk>();
+    private Dictionary<Vector3, Chunk> Generating = new Dictionary<Vector3, Chunk>();
+    private Queue<Chunk> ChunksToClear = new Queue<Chunk>();
+    private Vector3[] ChunksPositionCheck;
     private Chunk NewChunk
     {
         get
@@ -43,6 +46,25 @@ public class ChunksManager : MonoBehaviour
         {
             pool.Enqueue(NewChunk);
         }
+        GenerateChunksPositionsCheck();
+    }
+
+    public void GenerateChunksPositionsCheck()
+    {
+        //var time = Time.realtimeSinceStartup;
+
+        var job = new JobChunksFilter(Vector3.zero, PlayerSettings.RenderDistance);
+        ChunksPositionCheck = job.Complete();
+        job.Dispose();
+        /*
+        ChunksPositionCheck =
+                (from pos
+                 in ChunksPositionCheck
+                 where WorldSettings.ChunksInRange(ChunksManager.Instance.Center, pos, PlayerSettings.RenderDistance + PlayerSettings.CacheDistance)
+                 orderby WorldSettings.ChunkRangeMagnitude(ChunksManager.Instance.Center, pos) ascending
+                 select pos).ToArray();
+        */
+        //Debug.Log((Time.realtimeSinceStartup - time) * 1000f);
     }
 
     public void UpdateChunks(Vector3 center)
@@ -52,41 +74,41 @@ public class ChunksManager : MonoBehaviour
         cached.AddRange(active);
         active.Clear();
 
+        var newPending = new Dictionary<Vector3, Chunk>();
+
         var chunksToGenerate = new List<Vector3>();
 
-        for (int x = (int)center.x - PlayerSettings.RenderDistance; x <= (int)center.x + PlayerSettings.RenderDistance; x++)
+        for (int i = 0; i < ChunksPositionCheck.Length; i++)
         {
-            for (int z = (int)center.z - PlayerSettings.RenderDistance; z <= (int)center.z + PlayerSettings.RenderDistance; z++)
+            Vector3 key = new Vector3(ChunksPositionCheck[i].x + Center.x, 0, ChunksPositionCheck[i].z + Center.z);
+            if (cached.TryGetValue(key, out Chunk chunk))
             {
-                Vector3 key = new Vector3(x, 0, z);
-                if (cached.TryGetValue(key, out Chunk chunk))
-                {
-                    chunk.Active = true;
-                    chunk.Render = true;
-                    active.Add(key, chunk);
-                    cached.Remove(key);
-                    continue;
-                }
-
-                chunk = GetPooledChunk();
-                chunk.UpdateChunk(key); 
-                chunksToGenerate.Add(key);
                 chunk.Active = true;
                 chunk.Render = true;
                 active.Add(key, chunk);
+                cached.Remove(key);
+                continue;
             }
+            if(Generating.TryGetValue(key, out chunk))
+            {
+                continue;
+            }
+            chunksToGenerate.Add(key);
         }
+ 
+
         if(chunksToGenerate.Count > 0)
             ChunkFactory.Instance.GenerateChunksData(chunksToGenerate);
 
-        // ~0.02 ms 20Chunks, ~0.06ms 50Chunks
         List<Vector3> removals = (from key in cached.Keys
                                   where !WorldSettings.ChunksInRange(center, key, PlayerSettings.RenderDistance + PlayerSettings.CacheDistance)
                                   select key).ToList();
         
         foreach (var key in removals)
         {
-            ClearChunkAndEnqueue(key, ref cached);
+            ChunksToClear.Enqueue(cached[key]);
+            cached.Remove(key);
+            //ClearChunkAndEnqueue(key, ref cached);
         }
 
         foreach (var key in cached.Keys)
@@ -96,24 +118,30 @@ public class ChunksManager : MonoBehaviour
 
         AvgCounter.UpdateCounter(ChunksManagerLoopString, (Time.realtimeSinceStartup - UpdateTime) * 1000f);
     }
-
-    public void ClearChunkAndEnqueue(Vector3 pos, ref Dictionary<Vector3, Chunk> source)
+    public void LateUpdate()
     {
-        if (source.TryGetValue(pos, out Chunk chunk))
+        if(ChunksToClear.Count > 0)
         {
-            chunk.ClearChunk();
-            var size = PlayerSettings.CacheDistance + PlayerSettings.RenderDistance;
-            size *= size;
-            size -= PlayerSettings.RenderDistance * PlayerSettings.RenderDistance; 
-            if (pool.Count < size)
-                pool.Enqueue(chunk);
-            else
-                chunk.Dispose();
-            source.Remove(pos);
+            ClearChunkAndEnqueue(ChunksToClear.Dequeue());
         }
+    }
+    public void ClearChunkAndEnqueue(Chunk chunk)
+    {
+        chunk.ClearChunk();
+        var size = PlayerSettings.CacheDistance + PlayerSettings.RenderDistance;
+        size *= size;
+        size -= PlayerSettings.RenderDistance * PlayerSettings.RenderDistance;
+        if (pool.Count < size)
+            pool.Enqueue(chunk);
+        else
+            chunk.Dispose();
     }
     private Chunk GetPooledChunk()
     {
+        if(pool.Count == 0 && ChunksToClear.Count>0)
+        {
+            ClearChunkAndEnqueue(ChunksToClear.Dequeue());
+        }
         if (pool.Count > 0)
         {
             return pool.Dequeue();
@@ -137,7 +165,31 @@ public class ChunksManager : MonoBehaviour
         Chunk chunk =  GetChunkFromSource(pos, ref active);
         if (chunk == null)
             chunk = GetChunkFromSource(pos, ref cached);
+        if (chunk == null)
+            chunk = GetChunkFromSource(pos, ref Generating);
         return chunk;
+    }
+
+    public void SetChunkToGenerate(Vector3 pos)
+    {
+        Chunk chunk = GetChunk(pos);
+        if (chunk == null)
+        {
+            chunk = GetPooledChunk();
+            chunk.UpdateChunk(pos);
+            chunk.Active = true;
+            chunk.Render = true;
+        }
+        Generating.Add(pos, chunk);
+    }
+
+    public void CompleteGeneratingChunk(Vector3 pos)
+    {
+        if(Generating.TryGetValue(pos, out Chunk chunk))
+        {
+            active.Add(pos,chunk);
+            Generating.Remove(pos);
+        }
     }
 
     private int meshVertices = 0;

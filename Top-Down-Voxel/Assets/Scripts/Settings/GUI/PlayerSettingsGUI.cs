@@ -1,6 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
@@ -38,6 +36,8 @@ public class PlayerSettingsGUI : MonoBehaviour, ISettings
         PlayerSettings.ChunksToLoad = valueInt > 0 ? valueInt : PlayerSettings.ChunksToLoad;
         var valueFloat = (float)Convert.ToDouble(InputTimeToLoadNextChunks.text);
         PlayerSettings.TimeToLoadNextChunks = valueFloat >= 0 ? valueFloat : PlayerSettings.TimeToLoadNextChunks;
+
+        ChunksManager.Instance.GenerateChunksPositionsCheck();
         Load();
     }
 }

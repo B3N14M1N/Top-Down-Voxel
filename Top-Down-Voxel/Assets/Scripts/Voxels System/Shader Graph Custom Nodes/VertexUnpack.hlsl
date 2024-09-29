@@ -21,21 +21,23 @@ static const float2 MyUVs[4] =
 
 void UnpackVertexData_float(float3 packedData, out float3 position, out float3 normals, out float2 uvs, out float4 color32)
 {
-	int data = asint(packedData.x);
+	int posData = asint(packedData.x);
 
-	float x = data & 0xff;
-	data >>= 8;
-	float y = data & 0xff;
-	data >>= 8;
-	float z = data & 0xff;
-	data >>= 8;
+	float x = posData & 0xff;
+	posData >>= 8;
+	float y = posData & 0xff;
+	posData >>= 8;
+	float z = posData & 0xff;
+	posData >>= 8;
 	position = float3(x,y,z);
 
-	int normalIndex = data & 0xf;
-	normals = float3(MyNormals[normalIndex]);
-	data >>= 4;
-	int uvIndex = floor(packedData.z);
-	uvs = float2(MyUVs[uvIndex]);
+	int data = asint(packedData.z);
+
+	float normalIndex = data & 0xff;
+	normals = float3(MyNormals[floor(normalIndex)]);
+	data >>= 8;
+	float uvIndex = data & 0xff;
+	uvs = float2(MyUVs[int(floor(uvIndex))]);
 	
 	color32 = float4(packedData.y, 0, 0, 0);
 };
