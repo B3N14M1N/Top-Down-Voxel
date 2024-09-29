@@ -125,6 +125,7 @@ public class ChunksManager : MonoBehaviour
             ClearChunkAndEnqueue(ChunksToClear.Dequeue());
         }
     }
+
     public void ClearChunkAndEnqueue(Chunk chunk)
     {
         chunk.ClearChunk();
@@ -136,6 +137,7 @@ public class ChunksManager : MonoBehaviour
         else
             chunk.Dispose();
     }
+
     private Chunk GetPooledChunk()
     {
         if(pool.Count == 0 && ChunksToClear.Count>0)
@@ -232,11 +234,16 @@ public class ChunksManager : MonoBehaviour
         }
         cached.Clear();
 
+        foreach (var key in Generating.Keys)
+        {
+            Generating[key].Dispose();
+        }
+        Generating.Clear();
+
 #if UNITY_EDITOR
         EditorUtility.UnloadUnusedAssetsImmediate();
         GC.Collect();
 #endif
-
     }
 
     private void OnApplicationQuit()
