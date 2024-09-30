@@ -17,7 +17,7 @@ public class ChunksFactory : MonoBehaviour, IChunksFactory
     private List<Vector3> chunksToProccess = new List<Vector3>();
 
     private List<JobChunkGenerator> chunkJobs = new List<JobChunkGenerator>();
-    private List<JobChunkColliderGenerator> colliderJobs = new List<JobChunkColliderGenerator>();
+    private List<ChunkColliderGenerator> colliderJobs = new List<ChunkColliderGenerator>();
     [Header("Materials")]
     [SerializeField]private List<Material> materials = new List<Material>();
     private int materialIndex = 0;
@@ -87,7 +87,7 @@ public class ChunksFactory : MonoBehaviour, IChunksFactory
                 var timeNow = Time.realtimeSinceStartup;
                 if (chunkJobs[i].CompleteDataGeneration())
                 {
-                    colliderJobs.Add(new JobChunkColliderGenerator(chunkJobs[i].heightMaps.AsReadOnly(), chunkJobs[i].chunkPos));
+                    colliderJobs.Add(new ChunkColliderGenerator(chunkJobs[i].heightMaps.AsReadOnly(), chunkJobs[i].chunkPos));
                     chunkJobs[i].ScheduleMeshGeneration();
                 }
                 else
@@ -149,21 +149,7 @@ public class ChunksFactory : MonoBehaviour, IChunksFactory
 
     public void GenerateChunksData(List<Vector3> positions)
     {
-        //var time = Time.realtimeSinceStartup;
         chunksToProccess = positions;
-        //chunksToProccess = SortClosest(chunksToProccess);
-        //chunksToProccess.AddRange(SortClosest(positions));
-        //Debug.Log((Time.realtimeSinceStartup - time) * 1000f);
-    }
-
-    private List<Vector3> SortClosest(List<Vector3> list)
-    {
-        //sort chunks to generate the closest first ~0.4ms
-        return (from pos
-                in list
-                where WorldSettings.ChunksInRange(ChunksManager.Instance.Center, pos, PlayerSettings.RenderDistance + PlayerSettings.CacheDistance)
-                orderby WorldSettings.ChunkRangeMagnitude(ChunksManager.Instance.Center, pos) ascending
-                select pos).ToList();
     }
 
     public void Dispose()

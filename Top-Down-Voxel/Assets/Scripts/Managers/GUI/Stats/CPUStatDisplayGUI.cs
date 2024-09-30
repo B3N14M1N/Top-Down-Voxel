@@ -58,11 +58,12 @@ public class CPUStatDisplayGUI : MonoBehaviour, IStatDisplay
         {
             AvgCounter.UpdateCounter(CounterName, 1000.0f * Time.deltaTime);
 
-            UpdateMainText();
             if (displayContent)
                 UpdateContentText();
             lastInterval = timeNow;
         }
+
+        UpdateMainText();
     }
 
     public void DisplayContent()

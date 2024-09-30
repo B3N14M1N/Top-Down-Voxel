@@ -1,13 +1,6 @@
 using Unity.Collections;
 using UnityEngine;
 
-public enum ChunkGenerationFlags
-{
-    None = 1,
-    Mesh = 2,
-    Data = 4
-}
-
 public class Chunk
 {
     #region Fields

@@ -6,7 +6,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-public class JobChunkColliderGenerator
+public class ChunkColliderGenerator
 {
     public MeshColliderDataStruct ColliderData;
     public Vector3 chunkPos;
@@ -15,11 +15,11 @@ public class JobChunkColliderGenerator
 
     public bool GenerationStarted { get; private set; }
     public bool Generated { get; private set; }
-    public JobChunkColliderGenerator(NativeArray<HeightMap>.ReadOnly heightMap, Vector3 chunkPos)
+    public ChunkColliderGenerator(NativeArray<HeightMap>.ReadOnly heightMap, Vector3 chunkPos)
     {
         this.chunkPos = chunkPos;
         ColliderData.Initialize();
-        var dataJob = new ChunkMeshColliderJob()
+        var dataJob = new ChunkColliderJob()
         {
             chunkWidth = WorldSettings.ChunkWidth,
             chunkHeight = WorldSettings.ChunkHeight,
@@ -95,15 +95,30 @@ public struct MeshColliderDataStruct
     {
         if (Initialized && mesh != null)
         {
-            mesh.SetVertices(vertices.Reinterpret<Vector3>(), 0, count[0], MeshUpdateFlags.DontRecalculateBounds & MeshUpdateFlags.DontValidateIndices & MeshUpdateFlags.DontNotifyMeshUsers);
+            var flags = MeshUpdateFlags.DontRecalculateBounds & MeshUpdateFlags.DontValidateIndices & MeshUpdateFlags.DontNotifyMeshUsers;
+            mesh.SetVertices(vertices.Reinterpret<Vector3>(), 0, count[0], flags);
             mesh.SetIndices(indices, 0, count[1], MeshTopology.Triangles, 0, false);
             mesh.bounds = WorldSettings.ChunkBounds;
         }
     }
+
+    public Mesh GenerateMesh()
+    {
+        if (Initialized)
+        {
+            Mesh mesh = new Mesh() { indexFormat = IndexFormat.UInt32 };
+            var flags = MeshUpdateFlags.DontRecalculateBounds & MeshUpdateFlags.DontValidateIndices & MeshUpdateFlags.DontNotifyMeshUsers;
+            mesh.SetVertices(vertices.Reinterpret<Vector3>(), 0, count[0], flags);
+            mesh.SetIndices(indices, 0, count[1], MeshTopology.Triangles, 0, false);
+            mesh.bounds = WorldSettings.ChunkBounds;
+            return mesh;
+        }
+        return null;
+    }
 }
 
 [BurstCompile]
-public struct ChunkMeshColliderJob : IJob
+public struct ChunkColliderJob : IJob
 {
     #region Input
 
