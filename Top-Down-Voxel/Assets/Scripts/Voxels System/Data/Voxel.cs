@@ -1,6 +1,6 @@
 public struct Voxel
 {
-    public uint ID;
+    public ushort ID;
     public readonly bool IsEmpty => ID == 0;
     public static Voxel EmptyVoxel => new Voxel();
 };
@@ -31,20 +31,20 @@ public static class RWStructs
 {
     #region Voxel
 
-    private static readonly uint VOXEL_TYPE_MASK = 0x000000FF;
-    private static readonly uint EXCLUDE_VOXEL_TYPE_MASK = 0xFFFFFF00;
+    private static readonly ushort VOXEL_TYPE_MASK = 0x00FF;
+    private static readonly ushort EXCLUDE_VOXEL_TYPE_MASK = 0xFF00;
 
-    private static readonly uint PHYSICS_TYPE_MASK = 0x0000FF00;
-    private static readonly uint EXCLUDE_PHYSICS_TYPE_MASK = 0xFFFF00FF;
+    private static readonly ushort PHYSICS_TYPE_MASK = 0xFF00;
+    private static readonly ushort EXCLUDE_PHYSICS_TYPE_MASK = 0x00FF;
 
     public static void SetPhysicsType(ref Voxel voxel, VoxelPhysicsType type)
     {
-        voxel.ID = (voxel.ID & EXCLUDE_PHYSICS_TYPE_MASK) + (uint)((((int)type) << 8) & PHYSICS_TYPE_MASK);
+        voxel.ID = (ushort)((voxel.ID & EXCLUDE_PHYSICS_TYPE_MASK) + (ushort)(((ushort)type << 8) & PHYSICS_TYPE_MASK));
     }
 
     public static void SetVoxelType(ref Voxel voxel, VoxelType type)
     {
-        voxel.ID = (voxel.ID & EXCLUDE_VOXEL_TYPE_MASK) + (uint)(((int)type) & VOXEL_TYPE_MASK);
+        voxel.ID = (ushort)((voxel.ID & EXCLUDE_VOXEL_TYPE_MASK) + (ushort)(((ushort)type) & VOXEL_TYPE_MASK));
     }
 
     public static VoxelPhysicsType GetPhysicsType(Voxel voxel) => (VoxelPhysicsType)((int)((voxel.ID & PHYSICS_TYPE_MASK) >> 8));

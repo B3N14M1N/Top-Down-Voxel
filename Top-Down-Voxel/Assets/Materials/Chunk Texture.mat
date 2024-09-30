@@ -43,11 +43,12 @@ Material:
     m_Ints: []
     m_Floats:
     - _Ambient_Occulusion: 1
-    - _Color: 0
+    - _Color: 1
     - _Metallic: 0.625
     - _QueueControl: 0
     - _QueueOffset: 0
     - _Smoothness: 0.3
+    - _UseTexture: 1
     m_Colors: []
   m_BuildTextureStacks: []
 --- !u!114 &920021495521389424

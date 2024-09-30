@@ -5,7 +5,7 @@ using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
-public class ChunksManager : MonoBehaviour
+public class ChunksManager : MonoBehaviour, IChunksManager
 {
     public const string ChunksManagerLoopString = "ChunksManagerLoop";
     public Vector3 Center { get; private set; }
@@ -98,7 +98,7 @@ public class ChunksManager : MonoBehaviour
  
 
         if(chunksToGenerate.Count > 0)
-            ChunkFactory.Instance.GenerateChunksData(chunksToGenerate);
+            ChunksFactory.Instance.GenerateChunksData(chunksToGenerate);
 
         List<Vector3> removals = (from key in cached.Keys
                                   where !WorldSettings.ChunksInRange(center, key, PlayerSettings.RenderDistance + PlayerSettings.CacheDistance)
@@ -172,7 +172,7 @@ public class ChunksManager : MonoBehaviour
         return chunk;
     }
 
-    public void SetChunkToGenerate(Vector3 pos)
+    public void SetChunkToGenerating(Vector3 pos)
     {
         Chunk chunk = GetChunk(pos);
         if (chunk == null)

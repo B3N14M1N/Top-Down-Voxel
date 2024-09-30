@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class ChunkFactory : MonoBehaviour
+public class ChunksFactory : MonoBehaviour, IChunksFactory
 {
     #region Fields
     public const string ChunkMeshCreationString = "ChunkMeshCreationString";
@@ -26,15 +26,15 @@ public class ChunkFactory : MonoBehaviour
 
     [SerializeField] private KeyCode MaterialChangeKey = KeyCode.M;
 
-    private static ChunkFactory instance;
-    public static ChunkFactory Instance
+    private static ChunksFactory instance;
+    public static ChunksFactory Instance
     {
         get
         {
             if (instance == null)
-                instance = FindObjectOfType<ChunkFactory>();
+                instance = FindObjectOfType<ChunksFactory>();
             if (instance == null)
-                instance = new ChunkFactory();
+                instance = new ChunksFactory();
             return instance;
         }
         private set
@@ -137,7 +137,7 @@ public class ChunkFactory : MonoBehaviour
                 for (int i = 0; i < chunksToProccess.Count && JobChunkGenerator.Processed < PlayerSettings.ChunksProcessed; i++)
                 {
                     chunkJobs.Add(new JobChunkGenerator(chunksToProccess[i], noiseParameters.noise.ToArray(), octaveOffsets.ToArray(), noiseParameters.globalScale));
-                    ChunksManager.Instance.SetChunkToGenerate(chunksToProccess[i]);
+                    ChunksManager.Instance.SetChunkToGenerating(chunksToProccess[i]);
                     chunksToProccess.RemoveAt(i);
                     i--;
                 }

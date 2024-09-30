@@ -1229,13 +1229,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 669034327}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c41a9b909a7e95548b282b7738298084, type: 3}
+  m_Script: {fileID: 11500000, guid: 77fc82e5d405b1244b75bf8f7e4c04b9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   noiseParameters: {fileID: 11400000, guid: 013ccff6bf6ab2a4a85add3323b41d39, type: 2}
   materials:
   - {fileID: 2100000, guid: 803be1c311d0fc548ba75b7dd47ada71, type: 2}
-  - {fileID: 2100000, guid: 45b52a60b9a560145b4cb7f730dd612a, type: 2}
   - {fileID: 2100000, guid: 7d84f9b6cb289c443b1f9c05c59d0be2, type: 2}
   MaterialChangeKey: 109
 --- !u!114 &669034329

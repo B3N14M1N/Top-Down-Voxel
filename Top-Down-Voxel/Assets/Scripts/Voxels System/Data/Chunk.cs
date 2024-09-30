@@ -1,11 +1,16 @@
 using Unity.Collections;
 using UnityEngine;
 
+public enum ChunkGenerationFlags
+{
+    None = 1,
+    Mesh = 2,
+    Data = 4
+}
+
 public class Chunk
 {
     #region Fields
-
-    public Vector3 Position { get; private set; }
 
     private GameObject chunkInstance;
 
@@ -16,8 +21,25 @@ public class Chunk
     private NativeArray<Voxel> voxels;
     private NativeArray<HeightMap> heightMap;
 
-    public bool Dirty { get; private set; }
+    private bool _simulate;
+    #endregion
 
+    #region Properties
+
+    public Vector3 Position { get; private set; }
+    public bool Simulate
+    {
+        get { return _simulate; }
+        set 
+        {
+            if(value == false)
+            {
+                ClearData();
+            }
+            _simulate = value;
+        }
+    }
+    public bool Dirty { get; private set; }
     public Transform Parent 
     { 
         get
@@ -34,12 +56,11 @@ public class Chunk
                 chunkInstance.transform.parent = value;
         }
     }
-
     public Renderer Renderer
     {
         get
         {
-            if (meshRenderer == null && chunkInstance!=null)
+            if (meshRenderer == null && chunkInstance != null)
             {
                 chunkInstance.TryGetComponent<MeshRenderer>(out meshRenderer);
             }
@@ -76,7 +97,6 @@ public class Chunk
                 chunkInstance.SetActive(value);
         }
     }
-
     public Voxel this[Vector3 pos]
     {
         get 
@@ -91,7 +111,6 @@ public class Chunk
                 voxels[index] = value;
         }
     }
-
     public Voxel this[int x, int y, int z]
     {
         get
@@ -197,7 +216,7 @@ public class Chunk
             }
             if (meshRenderer != null)
             {
-                meshRenderer.sharedMaterial = ChunkFactory.Instance.Material;
+                meshRenderer.sharedMaterial = ChunksFactory.Instance.Material;
             }
 
         }
@@ -230,7 +249,11 @@ public class Chunk
     #endregion
 
     #region Clear & Disposing
-
+    private void ClearData()
+    {
+        if (voxels.IsCreated) voxels.Dispose();
+        if (heightMap.IsCreated) heightMap.Dispose();
+    }
     private void ClearMeshAndCollider()
     {
         if (chunkInstance != null)
@@ -262,10 +285,8 @@ public class Chunk
         if (Dirty)
             Debug.Log($"Chunk {Position} needs saving.");
 
+        ClearData();
         ClearMeshAndCollider();
-
-        if (voxels.IsCreated) voxels.Dispose();
-        if (heightMap.IsCreated) heightMap.Dispose();
 
         if (chunkInstance != null)
             chunkInstance.name = "Chunk Instance [pool]";
@@ -275,8 +296,7 @@ public class Chunk
 
     public void Dispose()
     {
-        if (voxels.IsCreated) voxels.Dispose();
-        if (heightMap.IsCreated) heightMap.Dispose();
+        ClearData();
         ClearMeshAndCollider();
 
         if(chunkInstance != null)
