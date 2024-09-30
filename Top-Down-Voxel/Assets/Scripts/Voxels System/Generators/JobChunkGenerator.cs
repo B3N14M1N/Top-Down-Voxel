@@ -251,12 +251,6 @@ public struct MeshDataStruct
     [NativeDisableParallelForRestriction]
     [NativeDisableContainerSafetyRestriction]
     public NativeArray<int> indices;
-    [NativeDisableParallelForRestriction]
-    [NativeDisableContainerSafetyRestriction]
-    public NativeArray<float2> uvs;
-    //[NativeDisableParallelForRestriction]
-    //[NativeDisableContainerSafetyRestriction]
-    //public NativeArray<Color32> colors32;
 
     [NativeDisableParallelForRestriction]
     [NativeDisableContainerSafetyRestriction]
@@ -272,16 +266,13 @@ public struct MeshDataStruct
         //divide by 2 -> cant be more vertices & faces than half of the voxels.
         vertices = new NativeArray<float3>(WorldSettings.RenderedVoxelsInChunk * 6 * 4 / 2, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         indices = new NativeArray<int>(WorldSettings.RenderedVoxelsInChunk * 6 * 6 / 2, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-        uvs = new NativeArray<float2>(WorldSettings.RenderedVoxelsInChunk * 6 * 4 / 2, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-        //colors32 = new NativeArray<Color32>(WorldSettings.RenderedVoxelsInChunk * 6 * 4 / 2, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+    
     }
     public void Dispose()
     {
         Initialized = false;
         if (vertices.IsCreated) vertices.Dispose();
         if (indices.IsCreated) indices.Dispose();
-        //if (colors32.IsCreated) colors32.Dispose();
-        if (uvs.IsCreated) uvs.Dispose();
         if (count.IsCreated) count.Dispose();
     }
 
@@ -292,10 +283,7 @@ public struct MeshDataStruct
             var flags = MeshUpdateFlags.DontRecalculateBounds & MeshUpdateFlags.DontValidateIndices & MeshUpdateFlags.DontNotifyMeshUsers;
             mesh.SetVertices(vertices.Reinterpret<Vector3>(), 0, count[0], flags);
             mesh.SetIndices(indices, 0, count[1], MeshTopology.Triangles, 0, false);
-            //mesh.SetColors(colors32, 0, count[0], flags);
-            mesh.SetUVs(0, uvs.Reinterpret<Vector2>(), 0, count[0], flags);
             mesh.bounds = WorldSettings.ChunkBounds;
-            //mesh.RecalculateTangents();
         }
     }
 }
@@ -338,9 +326,9 @@ public struct ChunkMeshJob : IJob
     #region Execution
     public float3 PackVertexData(float3 position, int normalIndex, int uvIndex, int id)
     {
-        int x = 0;
-        x <<= 8;
-        x += (byte)normalIndex;
+        int x = uvIndex;
+        x <<= 3;
+        x += normalIndex & 0x7;
         x <<= 8;
         x += (byte)position.z;
         x <<= 8;
@@ -348,16 +336,9 @@ public struct ChunkMeshJob : IJob
         x <<= 8;
         x += (byte)position.x;
 
-
-        float y = (float)id/(chunkHeight + 1);
-
-        int z = uvIndex;
-        z <<= 8;
-        z += (byte)normalIndex;
-
-        return new float3(BitConverter.Int32BitsToSingle(x),
-            y,
-            BitConverter.Int32BitsToSingle(z));
+        float y = id/(chunkHeight + 1.0f);
+        float z = 0;
+        return new float3(BitConverter.Int32BitsToSingle(x), y, z);
     }
 
     public void Execute()
@@ -468,7 +449,6 @@ public struct ChunkMeshJob : IJob
                         for (int j = 0; j < 4; j++)
                         {
                             meshData.vertices[meshData.count[0] + j] = PackVertexData(Vertices[FaceVerticeIndex[i * 4 + j]] + voxelPos, i, j, y);
-                            meshData.uvs[meshData.count[0] + j] = VerticeUVs[j];
                         }
                         for (int k = 0; k < 6; k++)
                         {
