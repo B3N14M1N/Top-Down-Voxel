@@ -27,7 +27,7 @@ public class WorldSettingsGUI : MonoBehaviour, ISettings
         if (valueInt != WorldSettings.Seed)
         {
             WorldSettings.Seed = valueInt;
-            ChunksFactory.Instance.InitSeed();
+            ChunkFactory.Instance.InitSeed();
         }
         valueInt = Convert.ToInt32(InputChunkWidth.text);
         WorldSettings.ChunkWidth = valueInt > 0 ? valueInt : WorldSettings.ChunkWidth;

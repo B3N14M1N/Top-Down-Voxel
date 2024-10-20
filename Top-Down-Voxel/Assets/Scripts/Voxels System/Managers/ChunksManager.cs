@@ -13,7 +13,7 @@ public class ChunksManager : MonoBehaviour, IChunksManager
     private Queue<Chunk> pool = new Queue<Chunk>();
     private Dictionary<Vector3, Chunk> active = new Dictionary<Vector3, Chunk>();
     private Dictionary<Vector3, Chunk> cached = new Dictionary<Vector3, Chunk>();
-    private Dictionary<Vector3, Chunk> Generating = new Dictionary<Vector3, Chunk>();
+    private Dictionary<Vector3, Chunk> generating = new Dictionary<Vector3, Chunk>();
     private Queue<Chunk> ChunksToClear = new Queue<Chunk>();
     private Vector3[] ChunksPositionCheck;
     private Chunk NewChunk
@@ -51,20 +51,9 @@ public class ChunksManager : MonoBehaviour, IChunksManager
 
     public void GenerateChunksPositionsCheck()
     {
-        //var time = Time.realtimeSinceStartup;
-
         var job = new JobChunksFilter(Vector3.zero, PlayerSettings.RenderDistance);
         ChunksPositionCheck = job.Complete();
         job.Dispose();
-        /*
-        ChunksPositionCheck =
-                (from pos
-                 in ChunksPositionCheck
-                 where WorldSettings.ChunksInRange(ChunksManager.Instance.Center, pos, PlayerSettings.RenderDistance + PlayerSettings.CacheDistance)
-                 orderby WorldSettings.ChunkRangeMagnitude(ChunksManager.Instance.Center, pos) ascending
-                 select pos).ToArray();
-        */
-        //Debug.Log((Time.realtimeSinceStartup - time) * 1000f);
     }
 
     public void UpdateChunks(Vector3 center)
@@ -74,13 +63,19 @@ public class ChunksManager : MonoBehaviour, IChunksManager
         cached.AddRange(active);
         active.Clear();
 
-        var newPending = new Dictionary<Vector3, Chunk>();
-
-        var chunksToGenerate = new List<Vector3>();
+        var chunksToGenerate = new List<GenerationData>();
 
         for (int i = 0; i < ChunksPositionCheck.Length; i++)
         {
             Vector3 key = new Vector3(ChunksPositionCheck[i].x + Center.x, 0, ChunksPositionCheck[i].z + Center.z);
+            var data = new GenerationData()
+            {
+                position = key,
+                flags = ChunkGenerationFlags.Data | ChunkGenerationFlags.Collider | ChunkGenerationFlags.Mesh,
+            };
+
+            //bool simulate = ChunksPositionCheck[i].y <= PlayerSettings.SimulateDistance * PlayerSettings.SimulateDistance;
+
             if (cached.TryGetValue(key, out Chunk chunk))
             {
                 chunk.Active = true;
@@ -89,16 +84,16 @@ public class ChunksManager : MonoBehaviour, IChunksManager
                 cached.Remove(key);
                 continue;
             }
-            if(Generating.TryGetValue(key, out chunk))
+            if(generating.TryGetValue(key, out chunk))
             {
                 continue;
             }
-            chunksToGenerate.Add(key);
+
+            chunksToGenerate.Add(data);
         }
  
-
         if(chunksToGenerate.Count > 0)
-            ChunksFactory.Instance.GenerateChunksData(chunksToGenerate);
+            ChunkFactory.Instance.GenerateChunksData(chunksToGenerate);
 
         List<Vector3> removals = (from key in cached.Keys
                                   where !WorldSettings.ChunksInRange(center, key, PlayerSettings.RenderDistance + PlayerSettings.CacheDistance)
@@ -168,7 +163,7 @@ public class ChunksManager : MonoBehaviour, IChunksManager
         if (chunk == null)
             chunk = GetChunkFromSource(pos, ref cached);
         if (chunk == null)
-            chunk = GetChunkFromSource(pos, ref Generating);
+            chunk = GetChunkFromSource(pos, ref generating);
         return chunk;
     }
 
@@ -182,15 +177,15 @@ public class ChunksManager : MonoBehaviour, IChunksManager
             chunk.Active = true;
             chunk.Render = true;
         }
-        Generating.Add(pos, chunk);
+        generating.Add(pos, chunk);
     }
 
     public void CompleteGeneratingChunk(Vector3 pos)
     {
-        if(Generating.TryGetValue(pos, out Chunk chunk))
+        if(generating.TryGetValue(pos, out Chunk chunk))
         {
-            active.Add(pos,chunk);
-            Generating.Remove(pos);
+            active.Add(pos, chunk);
+            generating.Remove(pos);
         }
     }
 
@@ -234,11 +229,11 @@ public class ChunksManager : MonoBehaviour, IChunksManager
         }
         cached.Clear();
 
-        foreach (var key in Generating.Keys)
+        foreach (var key in generating.Keys)
         {
-            Generating[key].Dispose();
+            generating[key].Dispose();
         }
-        Generating.Clear();
+        generating.Clear();
 
 #if UNITY_EDITOR
         EditorUtility.UnloadUnusedAssetsImmediate();

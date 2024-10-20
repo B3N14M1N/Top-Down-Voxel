@@ -14,7 +14,9 @@ public class Chunk
     private NativeArray<Voxel> voxels;
     private NativeArray<HeightMap> heightMap;
 
-    private bool _simulate;
+    public ref NativeArray<Voxel> Voxels => ref voxels;
+    public ref NativeArray<HeightMap> HeightMap => ref heightMap;
+
     #endregion
 
     #region Properties
@@ -22,16 +24,18 @@ public class Chunk
     public Vector3 Position { get; private set; }
     public bool Simulate
     {
-        get { return _simulate; }
+        get { return ColliderGenerated; }
         set 
         {
             if(value == false)
             {
                 ClearData();
             }
-            _simulate = value;
         }
     }
+    public bool DataGenerated { get; private set; }
+    public bool MeshGenerated { get; private set; }
+    public bool ColliderGenerated { get; private set; }
     public bool Dirty { get; private set; }
     public Transform Parent 
     { 
@@ -133,7 +137,7 @@ public class Chunk
         {
             if (!this[pos].IsEmpty)
             {
-                Debug.Log($"Cannot swap voxels at coords: {pos}");
+                Debug.Log($"Cannot swap Voxels at coords: {pos}");
                 return false;
             }
         }
@@ -209,9 +213,9 @@ public class Chunk
             }
             if (meshRenderer != null)
             {
-                meshRenderer.sharedMaterial = ChunksFactory.Instance.Material;
+                meshRenderer.sharedMaterial = ChunkFactory.Instance.Material;
             }
-
+            MeshGenerated = true;
         }
     }
 
@@ -227,7 +231,7 @@ public class Chunk
                 GameObject.Destroy(meshCollider.sharedMesh);
             meshCollider.sharedMesh = mesh; 
             ChunksManager.Instance.UpdateChunkColliderSize(meshCollider.sharedMesh.vertexCount, meshCollider.sharedMesh.triangles.Length);
-
+            ColliderGenerated = true;
         }
     }
 
@@ -237,6 +241,7 @@ public class Chunk
         if (this.heightMap.IsCreated) this.heightMap.Dispose();
         this.voxels = voxels;
         this.heightMap = heightMap;
+        DataGenerated = true;
     }
 
     #endregion
@@ -246,6 +251,7 @@ public class Chunk
     {
         if (voxels.IsCreated) voxels.Dispose();
         if (heightMap.IsCreated) heightMap.Dispose();
+        DataGenerated = false;
     }
     private void ClearMeshAndCollider()
     {
@@ -260,6 +266,7 @@ public class Chunk
                 ChunksManager.Instance.UpdateChunkMeshSize(-meshFilter.sharedMesh.vertexCount, -meshFilter.sharedMesh.triangles.Length);
                 GameObject.Destroy(meshFilter.sharedMesh);
             }
+            MeshGenerated = false;
 
             if (meshCollider == null)
             {
@@ -270,6 +277,7 @@ public class Chunk
                 ChunksManager.Instance.UpdateChunkColliderSize(-meshCollider.sharedMesh.vertexCount, -meshCollider.sharedMesh.triangles.Length);
                 GameObject.Destroy(meshCollider.sharedMesh);
             }
+            ColliderGenerated = false;
         }
     }
 

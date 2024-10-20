@@ -4,15 +4,13 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-using static UnityEngine.Mesh;
 
 
 public class ChunkDataGenerator
 {
     public GenerationData GenerationData { get; private set; }
-    public bool GenerationStarted { get; private set; }
-    public NativeArray<Voxel> voxels;
-    public NativeArray<HeightMap> heightMaps;
+    public NativeArray<Voxel> Voxels;
+    public NativeArray<HeightMap> HeightMap;
     private NativeArray<NoiseParameters> noiseParameters;
     private NativeArray<Vector2Int> octaveOffsets;
     private float globalScale;
@@ -26,23 +24,23 @@ public class ChunkDataGenerator
     {
         GenerationData = generationData;
         this.globalScale = globalScale;
-        GenerationStarted = true;
-
-        voxels = new NativeArray<Voxel>((WorldSettings.ChunkWidth + 2) * WorldSettings.ChunkHeight * (WorldSettings.ChunkWidth + 2), Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-        heightMaps = new NativeArray<HeightMap>((WorldSettings.ChunkWidth + 2) * (WorldSettings.ChunkWidth + 2), Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        this.octaveOffsets = new NativeArray<Vector2Int>(octaveOffsets, Allocator.Persistent);
+        this.noiseParameters = new NativeArray<NoiseParameters>(noiseParameters, Allocator.Persistent);
+        Voxels = new NativeArray<Voxel>((WorldSettings.ChunkWidth + 2) * WorldSettings.ChunkHeight * (WorldSettings.ChunkWidth + 2), Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        HeightMap = new NativeArray<HeightMap>((WorldSettings.ChunkWidth + 2) * (WorldSettings.ChunkWidth + 2), Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         var dataJob = new ChunkDataJob()
         {
             chunkWidth = WorldSettings.ChunkWidth,
             chunkHeight = WorldSettings.ChunkHeight,
-            voxels = this.voxels,
-            heightMaps = this.heightMaps,
+            voxels = this.Voxels,
+            heightMaps = this.HeightMap,
             chunkPos = this.GenerationData.position,
             noiseParameters = this.noiseParameters,
             octaveOffsets = this.octaveOffsets.Reinterpret<int2>(),
             globalScale = this.globalScale,
         };
-        GenerationStarted = true;
-        jobHandle = dataJob.Schedule(heightMaps.Length, 1);
+        jobHandle = dataJob.Schedule(HeightMap.Length, 1);
+        //Debug.Log("Scheduled: " + HeightMap.Length);
     }
 
 
@@ -54,13 +52,15 @@ public class ChunkDataGenerator
             Chunk chunk = ChunksManager.Instance.GetChunk(GenerationData.position);
             if (chunk != null)
             {
-
-                chunk.UploadData(ref voxels, ref heightMaps);
-
-                ChunksManager.Instance.CompleteGeneratingChunk(chunk.Position);
+                chunk.UploadData(ref Voxels, ref HeightMap);
             }
-            GenerationData.flags = GenerationData.flags & ChunkGenerationFlags.Mesh;
-            return GenerationData;
+            else
+            {
+                Dispose(true);
+                return null;
+            }
+            GenerationData.flags &= ChunkGenerationFlags.Mesh | ChunkGenerationFlags.Collider;
+            Dispose();
         }
         return GenerationData;
     }
@@ -72,8 +72,8 @@ public class ChunkDataGenerator
         if (octaveOffsets.IsCreated) octaveOffsets.Dispose();
         if (disposeData)
         {
-            if (voxels.IsCreated) voxels.Dispose();
-            if (heightMaps.IsCreated) heightMaps.Dispose();
+            if (Voxels.IsCreated) Voxels.Dispose();
+            if (HeightMap.IsCreated) HeightMap.Dispose();
         }
     }
 }
@@ -171,6 +171,5 @@ public struct ChunkDataJob : IJobParallelFor
     {
         return z + (y * (chunkWidth + 2)) + (x * (chunkWidth + 2) * chunkHeight);
     }
-
 
 }

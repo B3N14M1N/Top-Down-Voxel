@@ -5,56 +5,55 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+using static UnityEngine.Mesh;
 
 public class ChunkColliderGenerator
 {
-    public MeshColliderDataStruct ColliderData;
-    public Vector3 chunkPos;
+    public GenerationData GenerationData { get; private set; }
+    public MeshColliderDataStruct colliderData;
+    private JobHandle jobHandle;
+    public bool IsComplete => jobHandle.IsCompleted;
 
-    public JobHandle dataHandle;
-
-    public bool GenerationStarted { get; private set; }
-    public bool Generated { get; private set; }
-    public ChunkColliderGenerator(NativeArray<HeightMap>.ReadOnly heightMap, Vector3 chunkPos)
+    public ChunkColliderGenerator(GenerationData generationData, ref NativeArray<HeightMap> heightMap)
     {
-        this.chunkPos = chunkPos;
-        ColliderData.Initialize();
+        GenerationData = generationData;
+        colliderData.Initialize();
         var dataJob = new ChunkColliderJob()
         {
             chunkWidth = WorldSettings.ChunkWidth,
             chunkHeight = WorldSettings.ChunkHeight,
             heightMaps = heightMap,
-            colliderData = ColliderData,
+            colliderData = colliderData,
         };
-        GenerationStarted = true;
-        Generated = false;
-        dataHandle = dataJob.Schedule();
+        jobHandle = dataJob.Schedule();
     }
 
-    public bool CompletedGeneration()
+    public GenerationData Complete()
     {
-        if (GenerationStarted && !Generated && dataHandle.IsCompleted)
+        if (IsComplete)
         {
-            dataHandle.Complete();
-            Generated = true;
-            return true;
+            jobHandle.Complete();
+            Chunk chunk = ChunksManager.Instance.GetChunk(GenerationData.position);
+            if (chunk != null)
+            {
+                var collider = colliderData.GenerateMesh();
+                chunk.UpdateCollider(ref collider);
+            }
+            else
+            {
+                Dispose();
+                return null;
+            }
+            Dispose();
+            GenerationData.flags &= ChunkGenerationFlags.Mesh | ChunkGenerationFlags.Data;
         }
-        return false;
-    }
-    public void SetCollider(ref Mesh mesh)
-    {
-        if(GenerationStarted && ColliderData.Initialized)
-        {
-            if (mesh == null)
-                mesh = new Mesh() { indexFormat = IndexFormat.UInt32 };
-            ColliderData.UploadToMesh(ref mesh);
-        }
+        return GenerationData;
     }
 
     public void Dispose()
     {
-        dataHandle.Complete();
-        ColliderData.Dispose();
+        jobHandle.Complete();
+        colliderData.Dispose();
     }
 }
 
@@ -84,22 +83,13 @@ public struct MeshColliderDataStruct
 
         Initialized = true;
     }
+
     public void Dispose()
     {
         Initialized = false;
         if (vertices.IsCreated) vertices.Dispose();
         if (indices.IsCreated) indices.Dispose();
         if (count.IsCreated) count.Dispose();
-    }
-    public void UploadToMesh(ref Mesh mesh)
-    {
-        if (Initialized && mesh != null)
-        {
-            var flags = MeshUpdateFlags.DontRecalculateBounds & MeshUpdateFlags.DontValidateIndices & MeshUpdateFlags.DontNotifyMeshUsers;
-            mesh.SetVertices(vertices.Reinterpret<Vector3>(), 0, count[0], flags);
-            mesh.SetIndices(indices, 0, count[1], MeshTopology.Triangles, 0, false);
-            mesh.bounds = WorldSettings.ChunkBounds;
-        }
     }
 
     public Mesh GenerateMesh()
@@ -128,7 +118,7 @@ public struct ChunkColliderJob : IJob
     public int chunkHeight;
     [ReadOnly]
     [NativeDisableContainerSafetyRestriction]
-    public NativeArray<HeightMap>.ReadOnly heightMaps;
+    public NativeArray<HeightMap> heightMaps;
     #endregion
 
     #region Output

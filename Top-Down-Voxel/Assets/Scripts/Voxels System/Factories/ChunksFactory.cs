@@ -2,8 +2,9 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class ChunksFactory : MonoBehaviour, IChunksFactory
+public class ChunksFactory : MonoBehaviour
 {
+    /*
     #region Fields
     public const string ChunkMeshCreationString = "ChunkMeshCreationString";
     public const string ChunkFactoryLoopString = "ChunkFactoryLoop";
@@ -177,4 +178,5 @@ public class ChunksFactory : MonoBehaviour, IChunksFactory
     {
         Dispose();
     }
+    */
 }

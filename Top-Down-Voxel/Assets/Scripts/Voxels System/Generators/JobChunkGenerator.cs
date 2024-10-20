@@ -6,6 +6,7 @@ using UnityEngine.Rendering;
 
 public class JobChunkGenerator
 {
+    /*
     public static int Processed { get; private set; }
     public NativeArray<Voxel> voxels;
     public NativeArray<HeightMap> heightMaps;
@@ -139,6 +140,7 @@ public class JobChunkGenerator
         }
 
     }
+    */
 }
 
 /*
@@ -162,10 +164,10 @@ public struct ChunkDataJob : IJobParallelFor
 
     [NativeDisableParallelForRestriction]
     [NativeDisableContainerSafetyRestriction]
-    public NativeArray<Voxel> voxels;
+    public NativeArray<Voxel> Voxels;
     [NativeDisableParallelForRestriction]
     [NativeDisableContainerSafetyRestriction]
-    public NativeArray<HeightMap> heightMaps;
+    public NativeArray<HeightMap> HeightMap;
 
     public void Execute(int index)
     {
@@ -194,14 +196,14 @@ public struct ChunkDataJob : IJobParallelFor
         }
 
         RWStructs.SetSolid(ref heightMap, (uint)height);
-        heightMaps[index] = heightMap;
+        HeightMap[index] = heightMap;
         for (int y = 0; y < chunkHeight; y++)
         {
             int voxelIndex = GetVoxelIndex(x, y, z);
-            voxels[voxelIndex] = emptyVoxel;
+            Voxels[voxelIndex] = emptyVoxel;
             if (y < height)
             {
-                voxels[voxelIndex] = solid;
+                Voxels[voxelIndex] = solid;
             }
         }
     }
@@ -260,7 +262,7 @@ public struct MeshDataStruct
             Dispose();
         Initialized = true;
         count = new NativeArray<int>(2, Allocator.Persistent);
-        //divide by 2 -> cant be more vertices & faces than half of the voxels.
+        //divide by 2 -> cant be more vertices & faces than half of the Voxels.
         vertices = new NativeArray<float3>(WorldSettings.RenderedVoxelsInChunk * 6 * 4 / 2, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         indices = new NativeArray<int>(WorldSettings.RenderedVoxelsInChunk * 6 * 6 / 2, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
     
@@ -296,10 +298,10 @@ public struct ChunkMeshJob : IJob
     public int chunkHeight;
     [ReadOnly]
     [NativeDisableContainerSafetyRestriction]
-    public NativeArray<Voxel> voxels;
+    public NativeArray<Voxel> Voxels;
     [ReadOnly]
     [NativeDisableContainerSafetyRestriction]
-    public NativeArray<HeightMap> heightMaps;
+    public NativeArray<HeightMap> HeightMap;
     #endregion
 
     #region Output
@@ -417,12 +419,12 @@ public struct ChunkMeshJob : IJob
         {
             for (int z = 1; z <= chunkWidth; z++)
             {
-                int maxHeight = (int)(RWStructs.GetSolid(heightMaps[GetMapIndex(x, z)])) - 1;
+                int maxHeight = (int)(RWStructs.GetSolid(HeightMap[GetMapIndex(x, z)])) - 1;
 
 
                 for (int y = maxHeight; y >= 0; y--)
                 {
-                    Voxel voxel = voxels[GetVoxelIndex(x, y, z)];
+                    Voxel voxel = Voxels[GetVoxelIndex(x, y, z)];
                     if (RWStructs.GetVoxelType(voxel) == 0)
                         continue;
 
@@ -439,7 +441,7 @@ public struct ChunkMeshJob : IJob
                             if (y == 0 && i == 5) // lowest and bottom face
                                 continue;
                             int faceCheckIndex = GetVoxelIndex(x + (int)face.x, y + (int)face.y, z + (int)face.z);
-                            if (RWStructs.GetVoxelType(voxels[faceCheckIndex]) != 0)
+                            if (RWStructs.GetVoxelType(Voxels[faceCheckIndex]) != 0)
                                 continue;
                         }
                         surrounded = false;

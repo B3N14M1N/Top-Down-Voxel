@@ -26,6 +26,10 @@ Material:
     m_TexEnvs:
     - _Texture2D:
         m_Texture: {fileID: 10309, guid: 0000000000000000f000000000000000, type: 0}
+        m_Scale: {x: 0.5, y: 0.5}
+        m_Offset: {x: 0, y: 0}
+    - _Texture2D_Array:
+        m_Texture: {fileID: 18700000, guid: ea68ee016d3dbd94eb24e76177eb4fea, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
@@ -44,10 +48,11 @@ Material:
     m_Floats:
     - _Ambient_Occulusion: 1
     - _Color: 1
-    - _Metallic: 0.625
+    - _Index: 0
+    - _Metallic: 0.2
     - _QueueControl: 0
     - _QueueOffset: 0
-    - _Smoothness: 0.3
+    - _Smoothness: 0.2
     - _UseTexture: 1
     m_Colors: []
   m_BuildTextureStacks: []
